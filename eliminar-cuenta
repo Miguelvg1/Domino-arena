@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Eliminar cuenta | Titanes Dominó</title>
+  <meta name="description" content="Solicita la eliminación de tu cuenta y datos asociados de Titanes Dominó.">
+  <style>
+    :root{color-scheme:dark;--bg:#07111f;--card:#0e1d31;--text:#eef5ff;--muted:#b8c7db;--gold:#f1bd4a;--red:#ef4444;--line:#263c57}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07111f,#0a1728);color:var(--text);font:16px/1.65 Arial,sans-serif}main{width:min(820px,calc(100% - 32px));margin:32px auto 64px}article{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(22px,5vw,48px);box-shadow:0 18px 50px #0005}h1{font-size:clamp(30px,6vw,48px);line-height:1.1;margin:0 0 8px;color:var(--gold)}h2{font-size:22px;margin:32px 0 8px}p,li{color:var(--muted)}strong,a{color:var(--text)}a{text-underline-offset:3px}.callout{margin:20px 0;padding:18px;border-left:4px solid var(--red);background:#211218;border-radius:8px}.button{display:inline-block;margin:8px 0;padding:13px 18px;border-radius:10px;background:var(--red);color:#fff;text-decoration:none;font-weight:700}.secondary{background:#294765}.small{font-size:14px}footer{margin-top:38px;padding-top:20px;border-top:1px solid var(--line);font-size:14px}
+  </style>
+</head>
+<body><main><article>
+  <h1>Eliminar tu cuenta</h1>
+  <p><strong>Titanes Dominó</strong> · Solicitud de eliminación de cuenta y datos</p>
+
+  <div class="callout">
+    <h2>Solicitar desde la app</h2>
+    <p>Si puedes iniciar sesión, abre <strong>Más → Mi perfil → Eliminar mi cuenta</strong>. Confirma la solicitud escribiendo <strong>ELIMINAR</strong>. Esta vía verifica automáticamente que eres la persona titular de la cuenta.</p>
+  </div>
+
+  <h2>Solicitar sin iniciar sesión</h2>
+  <p>También puedes solicitarla sin abrir la app. Envía un correo desde la dirección asociada a tu cuenta con el asunto <strong>“Eliminar cuenta Titanes Dominó”</strong> e incluye tu nombre o alias de usuario. Podremos pedir una verificación razonable de identidad para proteger tu cuenta.</p>
+  <a class="button" href="mailto:lostitanesdelosguandules01@gmail.com?subject=Eliminar%20cuenta%20Titanes%20Domin%C3%B3&body=Solicito%20la%20eliminaci%C3%B3n%20de%20mi%20cuenta%20y%20datos%20asociados.%0A%0ANombre%20o%20alias%3A%20">Solicitar eliminación por correo</a>
+
+  <h2>Qué eliminamos</h2>
+  <ul>
+    <li>La cuenta de acceso y sus credenciales de autenticación.</li>
+    <li>Nombre, alias, teléfono, correo, foto de perfil e identificadores vinculados.</li>
+    <li>Mensajes de chat, reacciones, notificaciones, dispositivos registrados y demás contenido personal asociado.</li>
+    <li>Datos de actividad que permitan identificarte directamente.</li>
+  </ul>
+
+  <h2>Datos que podrían conservarse</h2>
+  <p>Para mantener la integridad de partidas, resultados y clasificaciones compartidas, algunos registros históricos podrán conservarse únicamente de forma anonimizada, sin nombre, alias, foto, contacto, credenciales ni identificadores que permitan vincularlos contigo. También podremos conservar por tiempo limitado la evidencia mínima de la solicitud y registros estrictamente necesarios por seguridad, prevención de fraude, resolución de disputas, copias de respaldo o cumplimiento legal.</p>
+
+  <h2>Plazo</h2>
+  <p>Confirmaremos la recepción y completaremos la eliminación en un plazo máximo de <strong>30 días</strong>, salvo que una obligación legal legítima requiera una conservación limitada. Los datos residuales en copias de respaldo se eliminan conforme a sus ciclos normales de retención.</p>
+
+  <p class="small">La solicitud no tiene costo. No es necesario reinstalar la app ni volver a iniciar sesión para usar la vía por correo.</p>
+  <a class="button secondary" href="/privacidad">Leer la Política de Privacidad</a>
+
+  <footer>Contacto: <a href="mailto:lostitanesdelosguandules01@gmail.com">lostitanesdelosguandules01@gmail.com</a></footer>
+</article></main></body>
+</html>
+
