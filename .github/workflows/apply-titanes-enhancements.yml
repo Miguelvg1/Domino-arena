@@ -19,11 +19,24 @@ jobs:
         uses: actions/checkout@v4
       - name: Aplicar mejoras de interfaz y pizarra
         run: python3 scripts/enhance_titanes.py
-      - name: Validar HTML básico
+      - name: Validar estructura y JavaScript
         run: |
           grep -q 'TITANES_DASHBOARD_V4' index.html
           grep -q 'PIZARRA EN VIVO' index.html
           grep -q 'chatBadge' index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
+          if not m:
+              raise SystemExit('No se encontró script module')
+          Path('/tmp/titanes.mjs').write_text(m.group(1),encoding='utf-8')
+          if len(s)>150000:
+              raise SystemExit('index.html creció demasiado')
+          print('HTML',len(s),'bytes')
+          PY
+          node --check /tmp/titanes.mjs
       - name: Guardar cambios
         run: |
           git config user.name "github-actions[bot]"
