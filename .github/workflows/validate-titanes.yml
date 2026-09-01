@@ -1,0 +1,36 @@
+name: Validar Titanes
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - '.github/workflows/validate-titanes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar estructura, tamaño y JavaScript
+        run: |
+          grep -q 'TITANES_DASHBOARD_V4' index.html
+          grep -q 'PIZARRA EN VIVO' index.html
+          grep -q 'chatBadge' index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          if len(s)>150000:
+              raise SystemExit('index.html demasiado grande')
+          m=re.search(r'<script type="module">(.*?)</script>',s,re.S)
+          if not m:
+              raise SystemExit('No se encontró script module')
+          Path('/tmp/titanes.mjs').write_text(m.group(1),encoding='utf-8')
+          print('Tamaño HTML:',len(s),'bytes')
+          PY
+          node --check /tmp/titanes.mjs
