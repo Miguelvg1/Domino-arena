@@ -5,6 +5,7 @@ on:
     branches: [ 'redesign/neon-titanes-v5' ]
     paths:
       - 'scripts/neon_titanes_v5.py'
+      - '.github/workflows/apply-neon-v5.yml'
   workflow_dispatch:
 
 permissions:
