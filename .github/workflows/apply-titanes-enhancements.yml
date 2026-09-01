@@ -1,0 +1,37 @@
+name: Aplicar mejoras Titanes
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'scripts/enhance_titanes.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  enhance:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Aplicar mejoras de interfaz y pizarra
+        run: python3 scripts/enhance_titanes.py
+      - name: Validar HTML básico
+        run: |
+          grep -q 'TITANES_DASHBOARD_V4' index.html
+          grep -q 'PIZARRA EN VIVO' index.html
+          grep -q 'chatBadge' index.html
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "Sin cambios pendientes"
+            exit 0
+          fi
+          git commit -m "Mejora interfaz, pizarra en vivo y alertas de chat"
+          git push
