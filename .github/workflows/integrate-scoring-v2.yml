@@ -7,6 +7,7 @@ on:
     paths:
       - scripts/apply_scoring_v2_patch_v3.py
       - scripts/fix_scoring_v2_structure.py
+      - scripts/fix_scoring_v2_copy.py
       - .github/workflows/integrate-scoring-v2.yml
   workflow_dispatch:
 
@@ -42,6 +43,7 @@ jobs:
         run: |
           python scripts/apply_scoring_v2_patch_v3.py
           python scripts/fix_scoring_v2_structure.py
+          python scripts/fix_scoring_v2_copy.py
 
       - name: Verify required integration markers and structure
         run: |
@@ -59,6 +61,7 @@ jobs:
             'data-type="multa"',
             'globalClubAlert',
             'liza_200_0',
+            'Corregir permite ajustar equipo, tipo de jugada, puntos y responsable.',
           ]
           missing=[x for x in required if x not in s]
           if missing:
