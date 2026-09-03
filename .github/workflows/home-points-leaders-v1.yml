@@ -1,0 +1,75 @@
+name: Home Points Leaders V1
+
+on:
+  push:
+    branches:
+      - feature/home-points-leaders
+    paths:
+      - scripts/apply_home_points_leaders_v1.py
+      - .github/workflows/home-points-leaders-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/home-points-leaders
+          fetch-depth: 0
+
+      - name: Apply guarded UI patch
+        run: python scripts/apply_home_points_leaders_v1.py
+
+      - name: Validate required UI changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          required=[
+            '<!--HOME_POINTS_LEADERS_V1-->',
+            'LÍDERES EN PUNTOS',
+            'player_net_points_v1',
+            'VER RANKING COMPLETO',
+            'PARTIDAS',
+            'GANADAS',
+            'PERDIDAS',
+            'TOTALES',
+            'Ranking de Puntos Individuales',
+          ]
+          missing=[x for x in required if x not in s]
+          if missing:
+              raise SystemExit('Missing required changes: '+', '.join(missing))
+          if '<h2>ESTADO GENERAL</h2>' in s:
+              raise SystemExit('ESTADO GENERAL card still present')
+          if s.count('<!--HOME_POINTS_LEADERS_V1-->') != 1:
+              raise SystemExit('Home points marker duplicated')
+          print('UI structural checks passed')
+          PY
+
+      - name: Validate JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.index('<script type="module">')+len('<script type="module">')
+          end=s.index('</script>',start)
+          Path('/tmp/titanes-home-points.mjs').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/titanes-home-points.mjs
+
+      - name: Commit verified app
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index.html changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: líderes de puntos y resumen de partidas en inicio"
+          git push origin HEAD:feature/home-points-leaders
