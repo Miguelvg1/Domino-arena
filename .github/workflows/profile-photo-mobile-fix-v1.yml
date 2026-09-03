@@ -1,0 +1,72 @@
+name: Profile Photo Mobile Fix V1
+
+on:
+  push:
+    branches:
+      - feature/profile-photo-mobile-fix
+    paths:
+      - scripts/fix_profile_photo_mobile_v1.py
+      - .github/workflows/profile-photo-mobile-fix-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/profile-photo-mobile-fix
+          fetch-depth: 0
+
+      - name: Apply guarded photo fix
+        run: python scripts/fix_profile_photo_mobile_v1.py
+
+      - name: Validate required changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          required=[
+            '<!--PROFILE_PHOTO_MOBILE_FIX_V1-->',
+            'readPhotoAsDataURL',
+            'loadPhotoElement',
+            'No se pudo leer la foto seleccionada',
+            'HEIC/HEIF',
+            "canvas.toBlob",
+          ]
+          missing=[x for x in required if x not in s]
+          if missing:
+              raise SystemExit('Missing required changes: '+', '.join(missing))
+          if 'createImageBitmap(file)' in s:
+              raise SystemExit('Legacy createImageBitmap path still present')
+          if s.count('<!--PROFILE_PHOTO_MOBILE_FIX_V1-->') != 1:
+              raise SystemExit('Profile photo fix marker duplicated')
+          print('Profile photo structural checks passed')
+          PY
+
+      - name: Validate JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.index('<script type="module">')+len('<script type="module">')
+          end=s.index('</script>',start)
+          Path('/tmp/titanes-profile-photo.mjs').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/titanes-profile-photo.mjs
+
+      - name: Commit verified app
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index.html changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: corrige carga de foto de perfil en móviles"
+          git push origin HEAD:feature/profile-photo-mobile-fix
