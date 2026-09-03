@@ -1,0 +1,63 @@
+name: Integrate Scoring V2 Safely
+
+on:
+  push:
+    branches:
+      - feature/anular-anotaciones
+    paths:
+      - scripts/apply_scoring_v2_patch.py
+      - .github/workflows/integrate-scoring-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/anular-anotaciones
+          fetch-depth: 0
+
+      - name: Apply guarded scoring patch
+        run: python scripts/apply_scoring_v2_patch.py
+
+      - name: Verify required integration markers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          required=[
+            '<!--SCORING_V2_INTEGRATED_0903-->',
+            "titanes_ranking_v2_compat",
+            "titanes_podium_v2_compat",
+            "player_individual_stats_v2",
+            "correct_score_event_v2",
+            "data-type=\"chivo\"",
+            "data-type=\"pase_con_ficha\"",
+            "data-type=\"multa\"",
+            "globalClubAlert",
+            "liza_200_0",
+          ]
+          missing=[x for x in required if x not in s]
+          if missing:
+              raise SystemExit('Missing integration markers: '+', '.join(missing))
+          if "sb.rpc('titanes_ranking'," in s:
+              raise SystemExit('Legacy titanes_ranking call remains in index.html')
+          print('All guarded V2 checks passed.')
+          PY
+
+      - name: Commit patched app only when verified
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index.html changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: integra scoring v2 y alerta global 200-0"
+          git push origin HEAD:feature/anular-anotaciones
