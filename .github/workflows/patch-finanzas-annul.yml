@@ -1,0 +1,61 @@
+name: Patch Titanes Finanzas - Anulacion
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-finanzas-annul.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar anulacion segura
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('finanzas.html')
+          s = p.read_text(encoding='utf-8')
+
+          old = '''<th>Fecha</th><th>Recibo</th><th>Concepto</th><th>Miembro</th><th>Entró</th><th>Salió</th><th>Estado</th><th>Recibo PDF</th>'''
+          new = '''<th>Fecha</th><th>Recibo</th><th>Concepto</th><th>Miembro</th><th>Entró</th><th>Salió</th><th>Estado</th><th>Recibo / Control</th>'''
+          if old in s:
+              s = s.replace(old, new, 1)
+
+          old_render = '''<td>${x.status==='valida'?'<span class="badge b0">Válido</span>':'<span class="badge b3">Anulado</span>'}</td><td>${x.receipt_number?`<button class="btn ghost" onclick="downloadReceiptById('${x.id}')">PDF</button> <button class="btn green" onclick="shareReceiptById('${x.id}')">WhatsApp</button>`:'—'}</td></tr>'''
+          new_render = '''<td>${x.status==='valida'?'<span class="badge b0">Válido</span>':`<span class="badge b3">Anulado</span>${x.void_reason?`<div class="muted" style="font-size:10px;margin-top:4px">${esc(x.void_reason)}</div>`:''}`}</td><td>${x.receipt_number?`<button class="btn ghost" onclick="downloadReceiptById('${x.id}')">PDF</button> <button class="btn green" onclick="shareReceiptById('${x.id}')">WhatsApp</button>`:'—'} ${canEdit()&&x.status==='valida'?`<button class="btn red" onclick="voidTransaction('${x.id}')">ANULAR</button>`:''}</td></tr>'''
+          if old_render not in s:
+              raise SystemExit('No se encontró el bloque renderMovements esperado; no se modificó nada.')
+          s = s.replace(old_render, new_render, 1)
+
+          marker = '''function renderReports(){'''
+          void_fn = '''async function voidTransaction(id){if(!canEdit())return alert('Tu cuenta no tiene permiso para anular movimientos.');let tx=transactions.find(x=>x.id===id);if(!tx||tx.status!=='valida')return alert('Este movimiento ya no está disponible para anular.');let reason=prompt('Motivo obligatorio de la anulación:');if(reason===null)return;reason=reason.trim();if(reason.length<5)return alert('Escribe un motivo claro de al menos 5 caracteres.');let label=(tx.receipt_number||tx.concept||'este movimiento');if(!confirm('¿Confirmas anular '+label+'?\n\nEl movimiento no se borrará. Quedará marcado como ANULADO y dejará de afectar caja, cuotas e informes.'))return;let{error}=await sb.from('transactions').update({status:'anulada',void_reason:reason,voided_at:new Date().toISOString(),voided_by:currentUser?.id||null}).eq('id',id).eq('status','valida');if(error)return alert('No se pudo anular: '+error.message);await refreshAll();alert('Movimiento anulado correctamente. La operación permanece en el historial para auditoría.')}'''
+          if 'async function voidTransaction(id)' not in s:
+              if marker not in s:
+                  raise SystemExit('No se encontró punto seguro para insertar voidTransaction.')
+              s = s.replace(marker, void_fn + marker, 1)
+
+          old_save = '''let t=movementType.value,due=t==='cuota'?nextUnpaidDue(movementMember.value,movementDate.value):null,payload={'''
+          new_save = '''let t=movementType.value,due=t==='cuota'?nextUnpaidDue(movementMember.value,movementDate.value):null;if(t==='cuota'&&!due){saveMovementBtn.disabled=false;saveMovementBtn.textContent='GUARDAR Y GENERAR RECIBO';return alert('Este miembro no tiene una cuota pendiente vencida para esa fecha. No se registró ningún cobro.')}let payload={'''
+          if old_save in s:
+              s = s.replace(old_save, new_save, 1)
+
+          old_rows = '''['Estado',tx.status==='valida'?'VÁLIDO':'ANULADO']'''
+          new_rows = '''['Estado',tx.status==='valida'?'VÁLIDO':'ANULADO'],...(tx.status!=='valida'&&tx.void_reason?[['Motivo de anulación',tx.void_reason]]:[])'''
+          if old_rows in s:
+              s = s.replace(old_rows, new_rows, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit y publicación
+        run: |
+          git config user.name "Titanes Finanzas Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add finanzas.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Agrega anulación auditada de movimientos financieros"
+          git push origin main
