@@ -6,6 +6,7 @@ on:
       - feature/anular-anotaciones
     paths:
       - scripts/apply_scoring_v2_patch_v3.py
+      - scripts/fix_scoring_v2_structure.py
       - .github/workflows/integrate-scoring-v2.yml
   workflow_dispatch:
 
@@ -38,9 +39,11 @@ jobs:
           PY
 
       - name: Apply guarded scoring patch
-        run: python scripts/apply_scoring_v2_patch_v3.py
+        run: |
+          python scripts/apply_scoring_v2_patch_v3.py
+          python scripts/fix_scoring_v2_structure.py
 
-      - name: Verify required integration markers
+      - name: Verify required integration markers and structure
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -62,6 +65,11 @@ jobs:
               raise SystemExit('Missing integration markers: '+', '.join(missing))
           if "sb.rpc('titanes_ranking'," in s:
               raise SystemExit('Legacy titanes_ranking call remains in index.html')
+          hs=s.index('<div id="scoreHistory">')
+          he=s.index('</details></div>',hs)+len('</details></div>')
+          history=s[hs:he]
+          if '</div></div></details></div>' in history:
+              raise SystemExit('Duplicated scoreHistory closing tag detected')
           print('All guarded V2 checks passed.')
           PY
 
@@ -85,5 +93,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "feat: integra scoring v2 y alerta global 200-0"
+          git commit -m "feat: integra scoring v2 validado sobre producción"
           git push origin HEAD:feature/anular-anotaciones
