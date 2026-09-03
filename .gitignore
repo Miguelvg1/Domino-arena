@@ -1,0 +1,15 @@
+# Android signing — nunca versionar
+*.jks
+*.keystore
+key.properties
+local.properties
+
+# Gradle / Android build
+.gradle/
+**/build/
+.idea/
+*.iml
+
+# Secrets
+.env
+.env.*
