@@ -1,0 +1,44 @@
+name: Tombola V1
+on:
+  push:
+    branches: [feature/tombola-sorteos]
+    paths:
+      - scripts/apply_tombola_v1.py
+      - .github/workflows/tombola-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/tombola-sorteos
+          fetch-depth: 0
+      - run: python scripts/apply_tombola_v1.py
+      - name: Validate structure
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          for x in ['<!--TOMBOLA_V1-->','Tómbola Titanes','FORMAR PAREJAS','SORTEAR ENFRENTAMIENTOS','secureShuffle','crypto.getRandomValues']:
+            assert x in s,x
+          assert s.count('<!--TOMBOLA_V1-->')==1
+          print('Tombola structural checks passed')
+          PY
+      - name: Validate JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8'); start=s.index('<script type="module">')+len('<script type="module">'); end=s.index('</script>',start); Path('/tmp/app.mjs').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/app.mjs
+      - name: Commit verified app
+        run: |
+          if git diff --quiet -- index.html; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: agrega tómbola para parejas y enfrentamientos"
+          git push origin HEAD:feature/tombola-sorteos
