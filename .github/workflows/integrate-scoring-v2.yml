@@ -22,6 +22,21 @@ jobs:
           ref: feature/anular-anotaciones
           fetch-depth: 0
 
+      - name: Snapshot exact current production app
+        run: |
+          curl --fail --silent --show-error --location \
+            https://titanes-domino-app-v21.vercel.app/ \
+            --output index.html
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          required=['TITANES_NEON_V5','function scoreForm(){','id="scoreHistory"','async function correctScore(','table:\'notifications\'']
+          missing=[x for x in required if x not in s]
+          if missing:
+              raise SystemExit('Production snapshot guard failed: '+', '.join(missing))
+          print('Production snapshot verified:',len(s),'bytes')
+          PY
+
       - name: Apply guarded scoring patch
         run: python scripts/apply_scoring_v2_patch_v3.py
 
