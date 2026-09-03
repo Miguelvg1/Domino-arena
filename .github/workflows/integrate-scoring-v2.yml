@@ -5,7 +5,7 @@ on:
     branches:
       - feature/anular-anotaciones
     paths:
-      - scripts/apply_scoring_v2_patch.py
+      - scripts/apply_scoring_v2_patch_v3.py
       - .github/workflows/integrate-scoring-v2.yml
   workflow_dispatch:
 
@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Apply guarded scoring patch
-        run: python scripts/apply_scoring_v2_patch.py
+        run: python scripts/apply_scoring_v2_patch_v3.py
 
       - name: Verify required integration markers
         run: |
@@ -32,15 +32,15 @@ jobs:
           s=Path('index.html').read_text(encoding='utf-8')
           required=[
             '<!--SCORING_V2_INTEGRATED_0903-->',
-            "titanes_ranking_v2_compat",
-            "titanes_podium_v2_compat",
-            "player_individual_stats_v2",
-            "correct_score_event_v2",
-            "data-type=\"chivo\"",
-            "data-type=\"pase_con_ficha\"",
-            "data-type=\"multa\"",
-            "globalClubAlert",
-            "liza_200_0",
+            'titanes_ranking_v2_compat',
+            'titanes_podium_v2_compat',
+            'player_individual_stats_v2',
+            'correct_score_event_v2',
+            'data-type="chivo"',
+            'data-type="pase_con_ficha"',
+            'data-type="multa"',
+            'globalClubAlert',
+            'liza_200_0',
           ]
           missing=[x for x in required if x not in s]
           if missing:
@@ -49,6 +49,17 @@ jobs:
               raise SystemExit('Legacy titanes_ranking call remains in index.html')
           print('All guarded V2 checks passed.')
           PY
+
+      - name: Validate JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.index('<script type="module">')+len('<script type="module">')
+          end=s.index('</script>',start)
+          Path('/tmp/titanes-app.mjs').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/titanes-app.mjs
 
       - name: Commit patched app only when verified
         run: |
