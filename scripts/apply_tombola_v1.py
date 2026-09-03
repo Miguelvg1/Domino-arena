@@ -1,0 +1,31 @@
+from pathlib import Path
+p=Path('index.html'); s=p.read_text(encoding='utf-8'); marker='<!--TOMBOLA_V1-->'
+if marker in s: raise SystemExit(0)
+css='''\n.tombolaCard{background:linear-gradient(145deg,#11182a,#080b12);border:1px solid #6f2cff;border-radius:22px;padding:16px;box-shadow:0 0 28px #7c2dff22}.tombolaMode{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tombolaMode button.on{border-color:#ffcc33;box-shadow:0 0 18px #ffcc3344}.tombolaPool{display:flex;flex-wrap:wrap;gap:7px;max-height:260px;overflow:auto;margin:12px 0}.tombolaChip{border:1px solid #293750;background:#07101d;color:#dbe7ff;border-radius:999px;padding:8px 10px;font-weight:800}.tombolaChip.on{background:#482080;border-color:#b45cff;color:white}.tombolaDrum{height:150px;border:1px solid #263755;border-radius:22px;display:grid;place-items:center;margin:14px 0;background:radial-gradient(circle,#291650,#070b13 68%);font-size:48px}.tombolaDrum.spin{animation:tspin .18s linear infinite}@keyframes tspin{to{transform:rotate(2deg)}}.tombolaResults{display:grid;gap:8px}.tombolaPair{background:#050a12;border:1px solid #24334b;border-radius:14px;padding:11px;font-weight:900}.tombolaVs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:#050a12;border:1px solid #24334b;border-radius:14px;padding:11px}.tombolaVs b{color:#ffcc33}.tombolaOdd{color:#ffcc33;font-size:11px}\n'''
+s=s.replace('</style></head>',css+'</style></head>',1)
+anchor='async function more(){'
+js=r'''let TOMBOLA_MODE='players',TOMBOLA_SELECTED=new Set(),TOMBOLA_PAIRS=[];
+function secureShuffle(a){a=[...a];let r=new Uint32Array(a.length);crypto.getRandomValues(r);for(let i=a.length-1;i>0;i--){let j=r[i]%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+async function tombola(){let {data}=await sb.from('members').select('id,full_name,nickname').eq('active',true).is('deleted_at',null).order('nickname');let ms=data||[];TOMBOLA_SELECTED=new Set(ms.map(x=>x.id));TOMBOLA_PAIRS=[];APP.innerHTML=`${back('Más')}<section class="tombolaCard"><h1>🎱 Tómbola Titanes</h1><p class="muted">Sorteo aleatorio para formar parejas o enfrentar parejas.</p><div class="tombolaMode"><button class="btn purple on" id="tmPlayers">👥 FORMAR PAREJAS</button><button class="btn dark" id="tmPairs">⚔️ SORTEAR ENFRENTAMIENTOS</button></div><div id="tombolaBody"></div></section>`;window.TOMBOLA_MEMBERS=ms;renderTombola();$('#tmPlayers').onclick=()=>{TOMBOLA_MODE='players';$('#tmPlayers').classList.add('on');$('#tmPairs').classList.remove('on');renderTombola()};$('#tmPairs').onclick=()=>{TOMBOLA_MODE='pairs';$('#tmPairs').classList.add('on');$('#tmPlayers').classList.remove('on');renderTombola()}}
+function renderTombola(){let ms=window.TOMBOLA_MEMBERS||[],body=$('#tombolaBody');if(TOMBOLA_MODE==='players'){body.innerHTML=`<p class="small"><b>Selecciona los jugadores que participarán:</b></p><div class="tombolaPool">${ms.map(x=>`<button class="tombolaChip ${TOMBOLA_SELECTED.has(x.id)?'on':''}" data-tm="${x.id}">${esc(x.nickname||x.full_name)}</button>`).join('')}</div><div class="tombolaDrum" id="tDrum">🎱</div><button class="btn green full" id="tDraw">🎲 SORTEAR PAREJAS</button><div class="tombolaResults" id="tResults"></div>`;document.querySelectorAll('[data-tm]').forEach(b=>b.onclick=()=>{TOMBOLA_SELECTED.has(b.dataset.tm)?TOMBOLA_SELECTED.delete(b.dataset.tm):TOMBOLA_SELECTED.add(b.dataset.tm);renderTombola()});$('#tDraw').onclick=drawPlayerPairs}else{body.innerHTML=`<p class="small"><b>Parejas del último sorteo:</b></p>${TOMBOLA_PAIRS.length?`<div class="tombolaPool">${TOMBOLA_PAIRS.map((p,i)=>`<span class="tombolaChip on">Pareja ${i+1}: ${esc(p.map(x=>x.nickname||x.full_name).join(' + '))}</span>`).join('')}</div><div class="tombolaDrum" id="tDrum">⚔️</div><button class="btn green full" id="tDrawVs">🎲 SORTEAR ENFRENTAMIENTOS</button><div class="tombolaResults" id="tResults"></div>`:'<p class="muted">Primero realiza el sorteo para formar las parejas.</p>'}`;if($('#tDrawVs'))$('#tDrawVs').onclick=drawMatchups}}
+function drum(cb){let d=$('#tDrum');d?.classList.add('spin');if(d)d.textContent='🎲';setTimeout(()=>{d?.classList.remove('spin');if(d)d.textContent='🏆';cb()},900)}
+function drawPlayerPairs(){let ms=(window.TOMBOLA_MEMBERS||[]).filter(x=>TOMBOLA_SELECTED.has(x.id));if(ms.length<2)return toast('Selecciona al menos 2 jugadores');drum(()=>{let a=secureShuffle(ms),pairs=[];while(a.length>=2)pairs.push([a.shift(),a.shift()]);TOMBOLA_PAIRS=pairs;let odd=a[0],r=$('#tResults');r.innerHTML=pairs.map((p,i)=>`<div class="tombolaPair">🤝 Pareja ${i+1}: ${esc(p[0].nickname||p[0].full_name)} + ${esc(p[1].nickname||p[1].full_name)}</div>`).join('')+(odd?`<div class="tombolaPair tombolaOdd">⏳ ${esc(odd.nickname||odd.full_name)} queda libre en este sorteo.</div>`:'')})}
+function drawMatchups(){if(TOMBOLA_PAIRS.length<2)return toast('Necesitas al menos 2 parejas');drum(()=>{let a=secureShuffle(TOMBOLA_PAIRS),out=[];while(a.length>=2)out.push([a.shift(),a.shift()]);let bye=a[0],r=$('#tResults');r.innerHTML=out.map((m,i)=>`<div class="tombolaVs"><span>${esc(m[0].map(x=>x.nickname||x.full_name).join(' + '))}</span><b>VS</b><span>${esc(m[1].map(x=>x.nickname||x.full_name).join(' + '))}</span></div>`).join('')+(bye?`<div class="tombolaPair tombolaOdd">🎟️ Pase libre: ${esc(bye.map(x=>x.nickname||x.full_name).join(' + '))}</div>`:'')})}
+'''
+if anchor not in s: raise SystemExit('more anchor missing')
+s=s.replace(anchor,js+anchor,1)
+# add card to Más menu before closing known options via first Mi perfil occurrence
+needle='<h2>MI PERFIL</h2>'
+pos=s.find(needle)
+if pos<0: raise SystemExit('profile menu anchor missing')
+# find enclosing card start and insert before it
+start=s.rfind('<div class="card',0,pos)
+if start<0: start=s.rfind('<section',0,pos)
+card='''<div class="card actionCard" data-a="tombola"><h2>🎱 TÓMBOLA</h2><p>Forma parejas y sortea enfrentamientos al azar.</p></div>'''
+s=s[:start]+card+s[start:]
+# action dispatcher add before fallback/known branch
+needle="if(a==='profile')return profile();"
+if needle not in s: raise SystemExit('action profile anchor missing')
+s=s.replace(needle,"if(a==='tombola')return tombola();"+needle,1)
+s=s.replace('</body></html>',marker+'</body></html>',1);p.write_text(s,encoding='utf-8')
+print('TOMBOLA_V1 applied',len(s))
