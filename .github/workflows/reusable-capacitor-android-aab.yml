@@ -1,0 +1,192 @@
+name: Reusable Capacitor Android AAB
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      version_code:
+        required: true
+        type: number
+      version_name:
+        required: true
+        type: string
+      key_alias:
+        required: true
+        type: string
+      expected_sha1:
+        required: false
+        type: string
+        default: ''
+      artifact_name:
+        required: false
+        type: string
+        default: Android-AAB
+      aab_filename:
+        required: false
+        type: string
+        default: app-release.aab
+      android_api:
+        required: false
+        type: number
+        default: 36
+      node_version:
+        required: false
+        type: string
+        default: '22'
+      java_version:
+        required: false
+        type: string
+        default: '21'
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: true
+      ANDROID_KEYSTORE_PASSWORD:
+        required: true
+      ANDROID_KEY_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java_version }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-${{ inputs.android_api }}" "build-tools;${{ inputs.android_api }}.0.0"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare web assets
+        shell: bash
+        run: |
+          rm -rf www android
+          mkdir -p www
+          rsync -av ./ www/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'www' \
+            --exclude 'android' \
+            --exclude 'node_modules' \
+            --exclude 'package.json' \
+            --exclude 'package-lock.json' \
+            --exclude 'capacitor.config.json'
+
+      - name: Create Android project
+        run: npx cap add android
+
+      - name: Sync Android project
+        run: npx cap sync android
+
+      - name: Set Android API and app version
+        shell: bash
+        env:
+          API: ${{ inputs.android_api }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          api = os.environ['API']
+          version_code = os.environ['VERSION_CODE']
+          version_name = os.environ['VERSION_NAME']
+
+          variables = Path('android/variables.gradle')
+          text = variables.read_text()
+          text = re.sub(r'compileSdkVersion\s*=\s*\d+', f'compileSdkVersion = {api}', text)
+          text = re.sub(r'targetSdkVersion\s*=\s*\d+', f'targetSdkVersion = {api}', text)
+          variables.write_text(text)
+
+          gradle = Path('android/app/build.gradle')
+          text = gradle.read_text()
+          text = re.sub(r'versionCode\s+\d+', f'versionCode {version_code}', text)
+          text = re.sub(r'versionName\s+"[^"]+"', f'versionName "{version_name}"', text)
+          gradle.write_text(text)
+          PY
+
+      - name: Restore upload key
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ inputs.key_alias }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/upload-key.jks"
+          keytool -list -keystore "$GITHUB_WORKSPACE/upload-key.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+
+      - name: Verify expected upload certificate
+        if: ${{ inputs.expected_sha1 != '' }}
+        shell: bash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ inputs.key_alias }}
+          EXPECTED_SHA1: ${{ inputs.expected_sha1 }}
+        run: |
+          set -euo pipefail
+          SHA1=$(keytool -list -v -keystore "$GITHUB_WORKSPACE/upload-key.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | sed -n 's/^[[:space:]]*SHA1: //p' | head -n1)
+          echo "Upload certificate SHA1: $SHA1"
+          test "$SHA1" = "$EXPECTED_SHA1"
+
+      - name: Build signed release AAB
+        working-directory: android
+        shell: bash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ inputs.key_alias }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/upload-key.jks" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+      - name: Verify and prepare AAB
+        shell: bash
+        env:
+          AAB_FILENAME: ${{ inputs.aab_filename }}
+        run: |
+          set -euo pipefail
+          SRC="android/app/build/outputs/bundle/release/app-release.aab"
+          test -f "$SRC"
+          jarsigner -verify "$SRC"
+          mkdir -p release
+          cp "$SRC" "release/$AAB_FILENAME"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: release/${{ inputs.aab_filename }}
+          if-no-files-found: error
+          retention-days: 30
