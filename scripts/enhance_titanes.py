@@ -4,11 +4,12 @@ from pathlib import Path
 p = Path('index.html')
 s = p.read_text(encoding='utf-8')
 # Bust de caché para Inicio/Top actualizado
-s = s.replace('<script type="module" src="/home-turnos-v2.js?v=1"></script>', '<script type="module" src="/home-turnos-v2.js?v=2"></script>')
+s = s.replace('<script type="module" src="/home-turnos-v2.js?v=1"></script>', '<script type="module" src="/home-turnos-v2.js?v=3"></script>')
+s = s.replace('<script type="module" src="/home-turnos-v2.js?v=2"></script>', '<script type="module" src="/home-turnos-v2.js?v=3"></script>')
 tags = [
     '<script type="module" src="/tombola.js"></script>',
     '<script src="/voice-control.js?v=1"></script>',
-    '<script type="module" src="/home-turnos-v2.js?v=2"></script>',
+    '<script type="module" src="/home-turnos-v2.js?v=3"></script>',
 ]
 
 if '</body>' not in s:
@@ -24,12 +25,17 @@ if changed or s != p.read_text(encoding='utf-8'):
     p.write_text(s, encoding='utf-8')
     changed = True
 
-# Integración de las jugadas especiales en Anotaciones V2
+# Integración real de las jugadas especiales en Anotaciones V2
 ap = Path('anotaciones-v2.html')
 if ap.exists():
     original = ap.read_text(encoding='utf-8')
-    a = original.replace('<script type="module" src="/annotation-specials.js?v=1"></script>', '<script type="module" src="/annotation-specials.js?v=2"></script>')
-    atag = '<script type="module" src="/annotation-specials.js?v=2"></script>'
+    a = original
+    for old in [
+        '<script type="module" src="/annotation-specials.js?v=1"></script>',
+        '<script type="module" src="/annotation-specials.js?v=2"></script>'
+    ]:
+        a = a.replace(old, '<script type="module" src="/annotation-specials.js?v=3"></script>')
+    atag = '<script type="module" src="/annotation-specials.js?v=3"></script>'
     if '</body>' not in a:
         raise SystemExit('No se encontró </body> en anotaciones-v2.html')
     if atag not in a:
