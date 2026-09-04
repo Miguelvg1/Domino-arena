@@ -15,6 +15,7 @@ tags = [
     '<script type="module" src="/tombola.js"></script>',
     '<script src="/voice-control.js?v=1"></script>',
     '<script type="module" src="/home-turnos-v3.js?v=4"></script>',
+    '<script type="module" src="/pizarra-official.js?v=1"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
