@@ -34,17 +34,20 @@ jobs:
           Path('/tmp/titanes.mjs').write_text(m.group(1),encoding='utf-8')
           if len(s)>150000:
               raise SystemExit('index.html creció demasiado')
-          print('HTML',len(s),'bytes')
+          a=Path('anotaciones-v2.html').read_text(encoding='utf-8')
+          if 'annotation-specials.js' not in a:
+              raise SystemExit('No se integró annotation-specials.js en anotaciones-v2.html')
+          print('HTML',len(s),'bytes | Anotaciones',len(a),'bytes')
           PY
           node --check /tmp/titanes.mjs
       - name: Guardar cambios
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add index.html anotaciones-v2.html
           if git diff --cached --quiet; then
             echo "Sin cambios pendientes"
             exit 0
           fi
-          git commit -m "Mejora interfaz, pizarra en vivo y alertas de chat"
+          git commit -m "Aplicar mejoras de inicio y anotaciones Titanes"
           git push
