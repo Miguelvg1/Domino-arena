@@ -1,0 +1,8 @@
+{
+  "appId": "com.titanesdomino.app",
+  "appName": "Titanes Dominó",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
