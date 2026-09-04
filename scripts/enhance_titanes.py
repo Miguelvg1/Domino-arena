@@ -5,6 +5,7 @@ s = p.read_text(encoding='utf-8')
 tags = [
     '<script type="module" src="/tombola.js"></script>',
     '<script src="/voice-control.js?v=1"></script>',
+    '<script type="module" src="/home-turnos-v2.js?v=1"></script>',
 ]
 
 if '</body>' not in s:
@@ -18,6 +19,6 @@ for tag in tags:
 
 if changed:
     p.write_text(s, encoding='utf-8')
-    print('Titanes Dominó: tómbola y mando por voz integrados correctamente')
+    print('Titanes Dominó: integraciones principales activadas correctamente')
 else:
     print('Titanes Dominó: integraciones ya estaban activas')
