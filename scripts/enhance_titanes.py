@@ -47,4 +47,5 @@ if ap.exists():
         ap.write_text(a, encoding='utf-8')
         changed = True
 
+# Reintento de publicación tras conflicto concurrente de GitHub Actions.
 print('Titanes Dominó: integraciones activadas correctamente' if changed else 'Titanes Dominó: integraciones ya estaban activas')
