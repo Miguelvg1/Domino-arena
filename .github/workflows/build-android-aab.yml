@@ -1,0 +1,109 @@
+name: Build Titanes Dominó Android AAB
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'package.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/build-android-aab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare web assets for Capacitor
+        run: |
+          rm -rf www android
+          mkdir -p www
+          rsync -av ./ www/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'www' \
+            --exclude 'android' \
+            --exclude 'node_modules' \
+            --exclude 'package.json' \
+            --exclude 'package-lock.json' \
+            --exclude 'capacitor.config.json'
+
+      - name: Create Android project
+        run: npx cap add android
+
+      - name: Sync Android project
+        run: npx cap sync android
+
+      - name: Set Android version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle')
+          s = p.read_text()
+          s = s.replace('versionCode 1', 'versionCode 1')
+          s = s.replace('versionName "1.0"', 'versionName "1.0.0"')
+          p.write_text(s)
+          PY
+
+      - name: Generate temporary upload key for first Alpha bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          KS_PASS="$(openssl rand -hex 24)"
+          echo "KS_PASS=$KS_PASS" >> "$GITHUB_ENV"
+          keytool -genkeypair \
+            -keystore "$GITHUB_WORKSPACE/titanes-upload.jks" \
+            -storepass "$KS_PASS" \
+            -keypass "$KS_PASS" \
+            -alias titanes-upload \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=Titanes Domino, OU=Android, O=Club de Domino Los Titanes, L=Santo Domingo, C=DO"
+
+      - name: Build signed release AAB
+        working-directory: android
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/titanes-upload.jks" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias=titanes-upload \
+            -Pandroid.injected.signing.key.password="$KS_PASS"
+
+      - name: Verify AAB signature
+        run: |
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -f "$AAB"
+          jarsigner -verify "$AAB"
+          mkdir -p release
+          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.0.aab"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Titanes-Domino-Alpha-AAB
+          path: release/Titanes-Domino-Alpha-1.0.0.aab
+          if-no-files-found: error
+          retention-days: 30
