@@ -1,0 +1,21 @@
+name: Build Android AAB
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android-aab:
+    uses: Miguelvg1/Domino-arena/.github/workflows/reusable-capacitor-android-aab.yml@main
+    with:
+      app_name: Mi Nueva App
+      version_code: 1
+      version_name: 1.0.0
+      key_alias: upload-key
+      expected_sha1: ''
+      artifact_name: Mi-Nueva-App-AAB
+      aab_filename: Mi-Nueva-App-1.0.0.aab
+      android_api: 36
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
