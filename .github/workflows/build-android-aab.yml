@@ -2,11 +2,6 @@ name: Build Titanes Dominó Android AAB
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'package.json'
-      - 'capacitor.config.json'
-      - '.github/workflows/build-android-aab.yml'
 
 permissions:
   contents: read
@@ -79,21 +74,18 @@ jobs:
           p.write_text(s)
           PY
 
-      - name: Generate upload key for Alpha bundle
+      - name: Restore permanent upload key
         shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          KS_PASS="$(openssl rand -hex 24)"
-          echo "KS_PASS=$KS_PASS" >> "$GITHUB_ENV"
-          keytool -genkeypair \
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/titanes-upload.jks"
+          keytool -list \
             -keystore "$GITHUB_WORKSPACE/titanes-upload.jks" \
-            -storepass "$KS_PASS" \
-            -keypass "$KS_PASS" \
-            -alias titanes-upload \
-            -keyalg RSA \
-            -keysize 4096 \
-            -validity 10000 \
-            -dname "CN=Titanes Domino, OU=Android, O=Club de Domino Los Titanes, L=Santo Domingo, C=DO"
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -alias titanes-upload >/dev/null
 
       - name: Build signed release AAB
         working-directory: android
@@ -102,9 +94,21 @@ jobs:
           chmod +x gradlew
           ./gradlew bundleRelease \
             -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/titanes-upload.jks" \
-            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias=titanes-upload \
-            -Pandroid.injected.signing.key.password="$KS_PASS"
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      - name: Verify permanent upload certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA1=$(keytool -list -v \
+            -keystore "$GITHUB_WORKSPACE/titanes-upload.jks" \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -alias titanes-upload | sed -n 's/^[[:space:]]*SHA1: //p' | head -n1)
+          EXPECTED="65:8E:D6:56:20:47:D2:6D:31:7D:8E:DA:73:5F:F3:19:DC:52:D7:E5"
+          echo "Upload certificate SHA1: $SHA1"
+          test "$SHA1" = "$EXPECTED"
 
       - name: Verify AAB signature
         run: |
