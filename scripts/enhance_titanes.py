@@ -7,12 +7,13 @@ for old in [
     '<script type="module" src="/home-turnos-v2.js?v=2"></script>',
     '<script type="module" src="/home-turnos-v2.js?v=3"></script>',
     '<script type="module" src="/home-turnos-v3.js?v=1"></script>',
+    '<script type="module" src="/home-turnos-v3.js?v=2"></script>',
 ]:
-    s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=2"></script>')
+    s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=3"></script>')
 tags = [
     '<script type="module" src="/tombola.js"></script>',
     '<script src="/voice-control.js?v=1"></script>',
-    '<script type="module" src="/home-turnos-v3.js?v=2"></script>',
+    '<script type="module" src="/home-turnos-v3.js?v=3"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
