@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Integraciones de la app principal
 p = Path('index.html')
 s = p.read_text(encoding='utf-8')
 tags = [
@@ -19,6 +20,17 @@ for tag in tags:
 
 if changed:
     p.write_text(s, encoding='utf-8')
-    print('Titanes Dominó: integraciones principales activadas correctamente')
-else:
-    print('Titanes Dominó: integraciones ya estaban activas')
+
+# Integración de las jugadas especiales en Anotaciones V2
+ap = Path('anotaciones-v2.html')
+if ap.exists():
+    a = ap.read_text(encoding='utf-8')
+    atag = '<script type="module" src="/annotation-specials.js?v=1"></script>'
+    if '</body>' not in a:
+        raise SystemExit('No se encontró </body> en anotaciones-v2.html')
+    if atag not in a:
+        a = a.replace('</body>', atag + '</body>', 1)
+        ap.write_text(a, encoding='utf-8')
+        changed = True
+
+print('Titanes Dominó: integraciones activadas correctamente' if changed else 'Titanes Dominó: integraciones ya estaban activas')
