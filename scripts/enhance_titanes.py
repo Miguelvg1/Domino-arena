@@ -12,12 +12,13 @@ for old in [
 ]:
     s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=4"></script>')
 
-# Mantener una sola versión activa del nuevo Turno Global.
+# Mantener una sola versión activa del nuevo Turno Global y forzar recarga de caché.
 for old in [
     '<script type="module" src="/turn-system-v4.js?v=1"></script>',
     '<script type="module" src="/turn-system-v4.js?v=2"></script>',
+    '<script type="module" src="/turn-system-v4.js?v=3"></script>',
 ]:
-    s = s.replace(old, '<script type="module" src="/turn-system-v4.js?v=3"></script>')
+    s = s.replace(old, '<script type="module" src="/turn-system-v4.js?v=4"></script>')
 
 tags = [
     '<script type="module" src="/tombola.js"></script>',
@@ -25,7 +26,7 @@ tags = [
     '<script type="module" src="/home-turnos-v3.js?v=4"></script>',
     '<script type="module" src="/pizarra-official.js?v=1"></script>',
     '<script type="module" src="/game-start-control.js?v=1"></script>',
-    '<script type="module" src="/turn-system-v4.js?v=3"></script>',
+    '<script type="module" src="/turn-system-v4.js?v=4"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
