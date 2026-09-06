@@ -11,12 +11,21 @@ for old in [
     '<script type="module" src="/home-turnos-v3.js?v=3"></script>',
 ]:
     s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=4"></script>')
+
+# Mantener una sola versión activa del nuevo Turno Global.
+for old in [
+    '<script type="module" src="/turn-system-v4.js?v=1"></script>',
+    '<script type="module" src="/turn-system-v4.js?v=2"></script>',
+]:
+    s = s.replace(old, '<script type="module" src="/turn-system-v4.js?v=3"></script>')
+
 tags = [
     '<script type="module" src="/tombola.js"></script>',
     '<script src="/voice-control.js?v=1"></script>',
     '<script type="module" src="/home-turnos-v3.js?v=4"></script>',
     '<script type="module" src="/pizarra-official.js?v=1"></script>',
     '<script type="module" src="/game-start-control.js?v=1"></script>',
+    '<script type="module" src="/turn-system-v4.js?v=3"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
@@ -47,5 +56,4 @@ if ap.exists():
         ap.write_text(a, encoding='utf-8')
         changed = True
 
-# Reintento de publicación tras conflicto concurrente de GitHub Actions.
 print('Titanes Dominó: integraciones activadas correctamente' if changed else 'Titanes Dominó: integraciones ya estaban activas')
