@@ -11,8 +11,6 @@ for old in [
     '<script type="module" src="/home-turnos-v3.js?v=3"></script>',
 ]:
     s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=4"></script>')
-
-# Mantener una sola versión activa del nuevo Turno Global y forzar recarga de caché.
 for old in [
     '<script type="module" src="/turn-system-v4.js?v=1"></script>',
     '<script type="module" src="/turn-system-v4.js?v=2"></script>',
@@ -20,20 +18,18 @@ for old in [
     '<script type="module" src="/turn-system-v4.js?v=4"></script>',
 ]:
     s = s.replace(old, '<script type="module" src="/turn-system-v4.js?v=5"></script>')
-
-# Retirar el módulo anterior de capacidad, que podía interferir con el render principal.
 for old in [
     '<script type="module" src="/table-capacity.js?v=1"></script>',
     '<script type="module" src="/table-capacity.js?v=2"></script>',
     '<script type="module" src="/table-capacity.js?v=3"></script>',
 ]:
     s = s.replace(old, '')
-
-# Activar el nuevo control de capacidad aislado y seguro.
-for old in [
-    '<script type="module" src="/turn-capacity-v2.js?v=1"></script>',
-]:
+for old in ['<script type="module" src="/turn-capacity-v2.js?v=1"></script>']:
     s = s.replace(old, '<script type="module" src="/turn-capacity-v2.js?v=2"></script>')
+for old in ['<script type="module" src="/turn-edit-search.js?v=1"></script>']:
+    s = s.replace(old, '<script type="module" src="/turn-edit-search.js?v=2"></script>')
+for old in ['<script type="module" src="/game-player-edit.js?v=1"></script>']:
+    s = s.replace(old, '<script type="module" src="/game-player-edit.js?v=2"></script>')
 
 tags = [
     '<script type="module" src="/tombola.js"></script>',
@@ -43,8 +39,8 @@ tags = [
     '<script type="module" src="/game-start-control.js?v=1"></script>',
     '<script type="module" src="/turn-system-v4.js?v=5"></script>',
     '<script type="module" src="/turn-capacity-v2.js?v=2"></script>',
-    '<script type="module" src="/turn-edit-search.js?v=1"></script>',
-    '<script type="module" src="/game-player-edit.js?v=1"></script>',
+    '<script type="module" src="/turn-edit-search.js?v=2"></script>',
+    '<script type="module" src="/game-player-edit.js?v=2"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
@@ -66,9 +62,10 @@ if ap.exists():
         '<script type="module" src="/annotation-specials.js?v=2"></script>'
     ]:
         a = a.replace(old, '<script type="module" src="/annotation-specials.js?v=3"></script>')
+    a = a.replace('<script type="module" src="/game-player-edit.js?v=1"></script>','<script type="module" src="/game-player-edit.js?v=2"></script>')
     atags = [
         '<script type="module" src="/annotation-specials.js?v=3"></script>',
-        '<script type="module" src="/game-player-edit.js?v=1"></script>',
+        '<script type="module" src="/game-player-edit.js?v=2"></script>',
     ]
     if '</body>' not in a:
         raise SystemExit('No se encontró </body> en anotaciones-v2.html')
