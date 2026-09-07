@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Restauración estable: mantener únicamente integraciones verificadas antes del fallo de pantalla en blanco.
 p = Path('index.html')
 s = p.read_text(encoding='utf-8')
 for old in [
@@ -12,7 +13,6 @@ for old in [
 ]:
     s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=4"></script>')
 
-# Mantener una sola versión activa del nuevo Turno Global y forzar recarga de caché.
 for old in [
     '<script type="module" src="/turn-system-v4.js?v=1"></script>',
     '<script type="module" src="/turn-system-v4.js?v=2"></script>',
@@ -20,6 +20,11 @@ for old in [
     '<script type="module" src="/turn-system-v4.js?v=4"></script>',
 ]:
     s = s.replace(old, '<script type="module" src="/turn-system-v4.js?v=5"></script>')
+
+# Retirar cualquier carga del módulo experimental de capacidad para recuperar arranque estable.
+for v in ['1','2','3','4','5']:
+    s = s.replace(f'<script type="module" src="/table-capacity.js?v={v}"></script>', '')
+s = s.replace('<script type="module" src="/table-capacity.js"></script>', '')
 
 tags = [
     '<script type="module" src="/tombola.js"></script>',
@@ -58,4 +63,4 @@ if ap.exists():
         ap.write_text(a, encoding='utf-8')
         changed = True
 
-print('Titanes Dominó: integraciones activadas correctamente' if changed else 'Titanes Dominó: integraciones ya estaban activas')
+print('Titanes Dominó: versión estable restaurada' if changed else 'Titanes Dominó: integraciones estables ya activas')
