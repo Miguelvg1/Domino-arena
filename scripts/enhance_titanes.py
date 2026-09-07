@@ -1,6 +1,5 @@
 from pathlib import Path
 
-# Restauración estable: mantener únicamente integraciones verificadas antes del fallo de pantalla en blanco.
 p = Path('index.html')
 s = p.read_text(encoding='utf-8')
 for old in [
@@ -13,6 +12,7 @@ for old in [
 ]:
     s = s.replace(old, '<script type="module" src="/home-turnos-v3.js?v=4"></script>')
 
+# Mantener una sola versión activa del nuevo Turno Global y forzar recarga de caché.
 for old in [
     '<script type="module" src="/turn-system-v4.js?v=1"></script>',
     '<script type="module" src="/turn-system-v4.js?v=2"></script>',
@@ -21,10 +21,19 @@ for old in [
 ]:
     s = s.replace(old, '<script type="module" src="/turn-system-v4.js?v=5"></script>')
 
-# Retirar cualquier carga del módulo experimental de capacidad para recuperar arranque estable.
-for v in ['1','2','3','4','5']:
-    s = s.replace(f'<script type="module" src="/table-capacity.js?v={v}"></script>', '')
-s = s.replace('<script type="module" src="/table-capacity.js"></script>', '')
+# Retirar el módulo anterior de capacidad, que podía interferir con el render principal.
+for old in [
+    '<script type="module" src="/table-capacity.js?v=1"></script>',
+    '<script type="module" src="/table-capacity.js?v=2"></script>',
+    '<script type="module" src="/table-capacity.js?v=3"></script>',
+]:
+    s = s.replace(old, '')
+
+# Activar el nuevo control de capacidad aislado y seguro.
+for old in [
+    '<script type="module" src="/turn-capacity-v2.js?v=1"></script>',
+]:
+    s = s.replace(old, '<script type="module" src="/turn-capacity-v2.js?v=2"></script>')
 
 tags = [
     '<script type="module" src="/tombola.js"></script>',
@@ -33,6 +42,7 @@ tags = [
     '<script type="module" src="/pizarra-official.js?v=1"></script>',
     '<script type="module" src="/game-start-control.js?v=1"></script>',
     '<script type="module" src="/turn-system-v4.js?v=5"></script>',
+    '<script type="module" src="/turn-capacity-v2.js?v=2"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
@@ -63,4 +73,4 @@ if ap.exists():
         ap.write_text(a, encoding='utf-8')
         changed = True
 
-print('Titanes Dominó: versión estable restaurada' if changed else 'Titanes Dominó: integraciones estables ya activas')
+print('Titanes Dominó: integraciones activadas correctamente' if changed else 'Titanes Dominó: integraciones ya estaban activas')
