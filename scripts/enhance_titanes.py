@@ -41,6 +41,7 @@ tags = [
     '<script type="module" src="/turn-capacity-v2.js?v=2"></script>',
     '<script type="module" src="/turn-edit-search.js?v=2"></script>',
     '<script type="module" src="/game-player-edit.js?v=2"></script>',
+    '<script type="module" src="/history-entry.js?v=1"></script>',
 ]
 if '</body>' not in s:
     raise SystemExit('No se encontró </body> en index.html')
