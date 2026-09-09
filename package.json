@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Android wrapper for Titanes Dominó",
+  "scripts": {
+    "postinstall": "node scripts/patch_finanzas_recovery.js"
+  },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
