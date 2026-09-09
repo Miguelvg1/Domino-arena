@@ -1,0 +1,13 @@
+const fs=require('fs');
+const p='finanzas.html';
+let s=fs.readFileSync(p,'utf8');
+const old='<button class="btn primary" style="width:100%;min-height:52px">Entrar a Titanes Finanzas</button><button class="btn ghost" type="button" style="width:100%;margin-top:8px" onclick="signup()">Crear cuenta</button><div id="authMsg" class="muted" style="margin-top:10px"></div>';
+const neu='<button class="btn primary" style="width:100%;min-height:52px">Entrar a Titanes Finanzas</button><button class="btn ghost" type="button" style="width:100%;margin-top:8px" onclick="signup()">Crear cuenta</button><button class="btn ghost" type="button" style="width:100%;margin-top:8px" onclick="forgotPassword()">¿Olvidaste tu contraseña?</button><div id="authMsg" class="muted" style="margin-top:10px"></div>';
+if(!s.includes(old)) throw new Error('Login block not found');
+s=s.replace(old,neu);
+const old2="async function signup(){const{error}=await sb.auth.signUp({email:email.value,password:password.value});authMsg.textContent=error?error.message:'Cuenta creada.'}async function logout()";
+const neu2="async function signup(){const{error}=await sb.auth.signUp({email:email.value,password:password.value});authMsg.textContent=error?error.message:'Cuenta creada.'}async function forgotPassword(){let mail=(email.value||'').trim();if(!mail){authMsg.textContent='Escribe primero tu correo electrónico.';return}authMsg.textContent='Enviando enlace de recuperación...';const{error}=await sb.auth.resetPasswordForEmail(mail,{redirectTo:location.origin+location.pathname});authMsg.textContent=error?error.message:'Si el correo está registrado, recibirás un enlace para recuperar el acceso.'}async function logout()";
+if(!s.includes(old2)) throw new Error('Signup block not found');
+s=s.replace(old2,neu2);
+fs.writeFileSync(p,s,'utf8');
+console.log('Titanes Finanzas recovery button applied');
