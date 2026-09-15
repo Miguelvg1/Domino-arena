@@ -1,0 +1,35 @@
+name: Enable iOS PWA
+on:
+  push:
+    paths:
+      - '.github/workflows/enable-ios-pwa.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add PWA metadata and registration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='<meta name="theme-color" content="#07111f">'
+          addition='''<link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Titanes Dominó"><meta name="mobile-web-app-capable" content="yes">'''
+          if 'rel="manifest"' not in s:
+              s=s.replace(marker, marker+addition, 1)
+          reg='''<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}</script>'''
+          if "navigator.serviceWorker.register('/sw.js')" not in s:
+              s=s.replace('</body>',reg+'</body>',1)
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "feat: enable installable iOS PWA"
+          git push
