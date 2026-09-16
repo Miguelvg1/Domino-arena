@@ -28,4 +28,16 @@ function pick(prefix){const guest=document.getElementById(prefix+'Guest')?.value
 function bind(){document.getElementById('tsAddMember')?.addEventListener('click',()=>{const id=cleanUuid(document.getElementById('tsMember')?.value);if(!id)return alert('Selecciona nuevamente el miembro.');rpc('add_turn_participant_safe',{p_member_id_text:id,p_guest_name:null})});document.getElementById('tsAddGuest')?.addEventListener('click',()=>{const n=document.getElementById('tsGuest')?.value.trim();if(!n)return alert('Escribe el nombre del invitado.');rpc('add_turn_participant_safe',{p_member_id_text:null,p_guest_name:n})});document.getElementById('tsAddPair')?.addEventListener('click',()=>{const a=pick('a'),b=pick('b');if((!a.member&&!a.guest)||(!b.member&&!b.guest))return alert('Completa los dos jugadores.');rpc('add_turn_pair_safe',{p_first_member_id_text:a.member,p_first_guest_name:a.guest,p_second_member_id_text:b.member,p_second_guest_name:b.guest})});document.querySelectorAll('[data-ts-remove]').forEach(b=>b.addEventListener('click',()=>rpc('remove_turn_entry',{p_entry_id:cleanUuid(b.dataset.tsRemove)})));document.querySelectorAll('[data-ts-mode]').forEach(b=>b.addEventListener('click',()=>status.mode===b.dataset.tsMode?null:rpc('set_turn_system_mode',{p_mode:b.dataset.tsMode})));document.getElementById('tsRefresh')?.addEventListener('click',async()=>{await loadData();render(true)})}
 function patchNewGameCard(){const c=[...document.querySelectorAll('.card')].find(x=>(x.querySelector('h2')?.textContent||'').includes('Nueva partida'));if(!c||c.dataset.turnPatched)return;c.dataset.turnPatched='1';c.innerHTML=`<h2>⚔️ Partidas por Turno Global</h2><div class="notice"><b>Las mesas ahora se arman automáticamente.</b><br>Agrega los jugadores en <b>Turnos</b>. Nadie puede iniciar una partida manualmente.</div>`}
 async function sync(){try{patchNewGameCard();if(!isTurnsPage())return;await loadData();if(isTurnsPage())render(true)}catch(e){console.warn('Turno Global:',e)}}
+let resumeRefreshTimer=null;
+function scheduleTurnResumeRefresh(){
+ if(document.hidden||!navigator.onLine)return;
+ clearTimeout(resumeRefreshTimer);
+ resumeRefreshTimer=setTimeout(()=>{
+  resumeRefreshTimer=null;
+  if(!document.hidden&&!busy)sync();
+ },350);
+}
+document.addEventListener('visibilitychange',scheduleTurnResumeRefresh);
+window.addEventListener('pageshow',scheduleTurnResumeRefresh);
+window.addEventListener('online',scheduleTurnResumeRefresh);
 const mo=new MutationObserver(()=>{patchNewGameCard();if(isTurnsPage()&&!document.querySelector('.tsHero'))sync()});mo.observe(document.documentElement,{childList:true,subtree:true});setTimeout(sync,700);setInterval(async()=>{if(!isTurnsPage()){patchNewGameCard();return}if(userIsInteracting()||busy)return;try{const before=lastQueueSignature;await loadData();const after=queueSignature();if(isTurnsPage()&&after!==before)render(true)}catch{}},4000);
