@@ -1,0 +1,52 @@
+name: Restore turns on app resume
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add read-only resume refresh to Turn Global
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('turn-system-v4.js')
+          s=p.read_text()
+          anchor='const mo=new MutationObserver('
+          assert s.count(anchor)==1, 'Unexpected Turn Global source; refusing to patch'
+          addition='''// Refresh authoritative turn state after mobile suspension or network restoration.
+// This only invokes the existing read-only sync(); it never advances a queue or starts a game.
+let resumeRefreshTimer=null;
+function scheduleTurnResumeRefresh(){
+  if(document.hidden||!navigator.onLine)return;
+  clearTimeout(resumeRefreshTimer);
+  resumeRefreshTimer=setTimeout(()=>{
+    resumeRefreshTimer=null;
+    if(!document.hidden&&!busy)sync();
+  },350);
+}
+document.addEventListener('visibilitychange',scheduleTurnResumeRefresh);
+window.addEventListener('pageshow',scheduleTurnResumeRefresh);
+window.addEventListener('online',scheduleTurnResumeRefresh);
+'''
+          if 'function scheduleTurnResumeRefresh()' not in s:
+              s=s.replace(anchor,addition+anchor,1)
+              p.write_text(s)
+          assert s.count('function scheduleTurnResumeRefresh()')==1
+          assert "sb.rpc('turn_system_status')" in s
+          assert 'if(document.hidden||!navigator.onLine)return;' in s
+          PY
+      - name: Validate JavaScript syntax and change scope
+        run: |
+          node --check turn-system-v4.js
+          git diff --check
+          git diff -- turn-system-v4.js
+      - name: Commit validated patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add turn-system-v4.js
+          git diff --cached --quiet || git commit -m "fix: refresh global turns when app resumes"
+          git push
