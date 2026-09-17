@@ -1,0 +1,32 @@
+name: Install connectivity indicator
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and install read-only indicator
+        run: |
+          node --check sync-status.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='<script src="/sync-status.js" defer></script>'
+          if marker not in s:
+              assert '</body>' in s, 'index.html missing body close'
+              s=s.replace('</body>',marker+'</body>',1)
+              p.write_text(s)
+          assert s.count(marker)==1
+          assert Path('sync-status.js').exists()
+          PY
+      - name: Commit validated integration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'feat: show Titanes connectivity indicator'
+          git push
