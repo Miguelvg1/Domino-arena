@@ -1,0 +1,72 @@
+name: Apply read-only winner holds UI
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply guarded UI-only patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('turn-system-v4.js')
+          s=p.read_text()
+          assert "let members=[],queue=[],status=null,busy=false,lastQueueSignature='';" in s
+          assert "async function loadData(){const [st,mm,qq]=await Promise.all(" in s
+          assert "${queueBlocks()}</div>${admin}" in s
+          assert "if(isTurnsPage()&&after!==before)render(true)" in s
+          assert "async function rpc(name,args){if(busy)return;busy=true;try{" in s
+          assert 'turn_table_holds' not in s, 'Patch already installed or conflicting changes'
+          s=s.replace("let members=[],queue=[],status=null,busy=false,lastQueueSignature='';", "let members=[],queue=[],status=null,busy=false,lastQueueSignature='',holds=[],holdsError=false;",1)
+          anchor="function memberOptions(selected='')"
+          helpers='''function holdsSignature(){return JSON.stringify([holdsError,holds.map(h=>[h.table_id,h.winner_1,h.winner_2,h.club_tables?.name,h.club_tables?.active])])}
+          async function loadHolds(){
+            const r=await sb.from('turn_table_holds').select('table_id,winner_1,winner_2,club_tables(name,active)');
+            if(r.error){holds=[];holdsError=true;console.warn('Reservas no disponibles:',r.error);return}
+            holds=r.data||[];holdsError=false;
+          }
+          function holdsBlock(){
+            if(holdsError)return '<div class="card"><h2>🏆 Ganadores esperando retadores</h2><p class="muted">No se pudo consultar las reservas. Intenta actualizar.</p></div>';
+            if(!holds.length)return '';
+            const byId=new Map(members.map(m=>[m.id,nm(m)]));
+            return `<div class="card"><h2>🏆 Ganadores esperando retadores</h2>${holds.map(h=>{
+              const table=esc(h.club_tables?.name||'Mesa sin nombre');
+              const players=esc(byId.get(h.winner_1)||'Jugador')+' + '+esc(byId.get(h.winner_2)||'Jugador');
+              return `<div class="tsPair"><b>🏆 ${table}: ${players}</b><div class="small muted">${h.club_tables?.active===true?'Esperando a los próximos retadores':'Mesa desactivada · reserva pendiente de revisión'}</div></div>`;
+            }).join('')}</div>`;
+          }
+          async function busyMessage(memberId){
+            if(!memberId)return null;
+            const h=holds.find(x=>x.winner_1===memberId||x.winner_2===memberId);
+            if(!h)return null;
+            return `Ese jugador permanece en ${h.club_tables?.name||'su mesa'} como ganador y espera retadores.`;
+          }
+          '''
+          assert s.count(anchor)==1
+          s=s.replace(anchor,helpers+anchor,1)
+          old="if(st.error)throw st.error;status=st.data;members=mm.data||[];queue=qq.data||[]"
+          assert s.count(old)==1
+          s=s.replace(old,"if(st.error)throw st.error;status=st.data;members=mm.data||[];queue=qq.data||[];await loadHolds()",1)
+          s=s.replace('${queueBlocks()}</div>${admin}', '${queueBlocks()}</div>${holdsBlock()}${admin}',1)
+          old="}catch(e){alert(e.message||String(e))}finally{busy=false}"
+          assert s.count(old)==1
+          new="}catch(e){const id=cleanUuid(args?.p_member_id_text);const msg=String(e.message||e);if(id&&/ya está jugando|ya esta jugando/i.test(msg)){await loadHolds();alert(await busyMessage(id)||msg)}else alert(msg)}finally{busy=false}"
+          s=s.replace(old,new,1)
+          old="const before=lastQueueSignature;await loadData();const after=queueSignature();if(isTurnsPage()&&after!==before)render(true)"
+          assert s.count(old)==1
+          s=s.replace(old,"const before=lastQueueSignature,oldHolds=holdsSignature();await loadData();const after=queueSignature();if(isTurnsPage()&&(after!==before||holdsSignature()!==oldHolds))render(true)",1)
+          p.write_text(s)
+          PY
+          node --check turn-system-v4.js
+          git diff --check
+          git diff --exit-code -- index.html || (echo 'Unexpected index.html change' && exit 1)
+      - name: Commit UI-only change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add turn-system-v4.js
+          git diff --cached --quiet || git commit -m 'feat: show reserved winners separately in turns'
+          git push
