@@ -130,6 +130,38 @@ jobs:
           gradle.write_text(text)
           PY
 
+      - name: Android 16 compatibility guard
+        shell: bash
+        env:
+          API: ${{ inputs.android_api }}
+        run: |
+          set -euo pipefail
+          echo "Checking generated Android project for API $API compatibility..."
+          test -f android/app/src/main/AndroidManifest.xml
+          test -f android/variables.gradle
+          grep -Eq "targetSdkVersion[[:space:]]*=[[:space:]]*$API" android/variables.gradle
+          grep -Eq "compileSdkVersion[[:space:]]*=[[:space:]]*$API" android/variables.gradle
+
+          if grep -RInE --include='*.java' --include='*.kt' 'onBackPressed[[:space:]]*\(|KEYCODE_BACK' android/app/src/main android/app/src/main/java 2>/dev/null; then
+            echo 'ERROR: Legacy Android back interception detected. Android 16/API 36 requires supported predictive-back navigation APIs.'
+            exit 1
+          fi
+
+          if grep -RIn 'windowOptOutEdgeToEdgeEnforcement' android/app/src/main android/app/src/main/res 2>/dev/null; then
+            echo 'ERROR: Edge-to-edge opt-out detected. It is disabled for apps targeting Android 16/API 36.'
+            exit 1
+          fi
+
+          echo 'Android 16 guard passed: no legacy back interception or edge-to-edge opt-out detected.'
+
+      - name: Compile Android before signing
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug
+
       - name: Restore upload key
         shell: bash
         env:
