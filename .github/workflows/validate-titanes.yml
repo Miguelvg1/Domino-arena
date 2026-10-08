@@ -6,6 +6,9 @@ on:
     paths:
       - 'index.html'
       - '.github/workflows/validate-titanes.yml'
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -34,3 +37,13 @@ jobs:
           print('Tamaño HTML:',len(s),'bytes')
           PY
           node --check /tmp/titanes.mjs
+
+      - name: Probar regresión de Turnos cuando exista
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f tests/turns-resume-regression.test.mjs ]; then
+            node --test tests/turns-resume-regression.test.mjs
+          else
+            echo 'No hay prueba de Turnos en esta rama; se conserva la validación base.'
+          fi
