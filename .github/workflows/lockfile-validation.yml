@@ -1,0 +1,41 @@
+name: Generate and validate Android dependency lockfile
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/lockfile-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve dependency graph without lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Validate deterministic install without modifying app files
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Validate Capacitor major alignment
+        run: |
+          node - <<'NODE'
+          const lock = require('./package-lock.json');
+          const names = ['@capacitor/android','@capacitor/cli','@capacitor/core'];
+          const versions = names.map(name => lock.packages['node_modules/'+name]?.version);
+          if (versions.some(v => !v || !v.startsWith('7.'))) throw Error('Capacitor major mismatch: '+versions);
+          if (new Set(versions).size !== 1) throw Error('Capacitor versions must match: '+versions);
+          console.log('Resolved Capacitor:',versions[0]);
+          NODE
+      - name: Upload lockfile for review (not committed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: proposed-package-lock
+          path: package-lock.json
+          if-no-files-found: error
