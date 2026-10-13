@@ -1,0 +1,34 @@
+name: Validate Turnos search performance patch
+on:
+  pull_request:
+    paths:
+      - 'turn-edit-search.js'
+      - '.github/workflows/validate-turn-edit-search.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: node --check turn-edit-search.js
+      - name: Assert safe read-only optimization invariants
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const code=readFileSync('turn-edit-search.js','utf8');
+          assert.match(code,/MutationObserver\(schedulePatch\)/);
+          assert.match(code,/setTimeout\(\(\)=>\{patchTimer=null;runPatch\(\)\},200\)/);
+          assert.match(code,/membersRequest/);
+          assert.match(code,/auditRequest/);
+          assert.match(code,/if\(r\.error\)throw r\.error/);
+          assert.match(code,/replace_turn_entry/);
+          assert.doesNotMatch(code,/\.from\(['"](?:matches|scores|rankings)['"]\)\.(?:insert|update|delete|upsert)/);
+          console.log('Static invariants passed; device behavior still requires manual testing.');
+          NODE
