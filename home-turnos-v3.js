@@ -3,10 +3,17 @@ import{createClient}from'https://esm.sh/@supabase/supabase-js@2.57.4';
 const sb=createClient('https://hvpyngkqtqzvmweavego.supabase.co','sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX');
 let busyTop=false,busyDayTop=false,busyDay=false,memberCache=null;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function localDayStart(){let d=new Date();d.setHours(0,0,0,0);return d}
-function previousDayStart(){let d=new Date();d.setDate(d.getDate()-1);d.setHours(0,0,0,0);return d}
-function weekStart(){const now=new Date(),day=now.getDay(),from=new Date(now);from.setDate(now.getDate()-day);from.setHours(0,0,0,0);return from}
-function dayKey(){const d=new Date();return [d.getFullYear(),d.getMonth()+1,d.getDate()].join('-')}\nfunction weekKey(){return weekStart().toISOString()}\nfunction weeklyPanel(){const h=[...document.querySelectorAll('h2')].find(x=>x.textContent.trim().toUpperCase()==='TOP 10 SEMANAL');return h?.closest('.dashPanel')||null}
+// Competitive periods use the club's official timezone, not the viewer's device timezone.
+const CLUB_TZ='America/Santo_Domingo';
+const clubParts=new Intl.DateTimeFormat('en-US',{timeZone:CLUB_TZ,year:'numeric',month:'2-digit',day:'2-digit'});
+function clubDate(now=new Date()){const p=Object.fromEntries(clubParts.formatToParts(now).filter(x=>x.type!=='literal').map(x=>[x.type,Number(x.value)]));return new Date(Date.UTC(p.year,p.month-1,p.day))}
+function clubMidnight(day){return new Date(day.getTime()+4*60*60*1000)} // Santo Domingo is UTC-04:00 year-round.
+function localDayStart(){return clubMidnight(clubDate())}
+function previousDayStart(){return clubMidnight(new Date(clubDate().getTime()-86400000))}
+function weekStart(){const d=clubDate();return clubMidnight(new Date(d.getTime()-d.getUTCDay()*86400000))}
+function dayKey(){return localDayStart().toISOString()}
+function weekKey(){return weekStart().toISOString()}
+function weeklyPanel(){const h=[...document.querySelectorAll('h2')].find(x=>x.textContent.trim().toUpperCase()==='TOP 10 SEMANAL');return h?.closest('.dashPanel')||null}
 async function membersMap(){if(memberCache)return memberCache;const r=await sb.from('members').select('id,full_name,nickname,photo_url').eq('active',true).is('deleted_at',null);memberCache=new Map((r.data||[]).map(x=>[x.id,x]));return memberCache}
 function initials(name='Titán'){return String(name).trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'T'}
 function photo(row,map,cls='rankPhoto'){const m=map.get(row.member_id),name=row.player_name||m?.nickname||m?.full_name||'Titán';return m?.photo_url?`<img class="${cls}" src="${esc(m.photo_url)}" alt="${esc(name)}" onerror="this.outerHTML='<div class=&quot;${cls} rankInitials&quot;>${esc(initials(name))}</div>'">`:`<div class="${cls} rankInitials">${esc(initials(name))}</div>`}
