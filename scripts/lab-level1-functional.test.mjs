@@ -50,3 +50,37 @@ test('correction changes team, clears player, preserves points and records only 
  assert.equal(db.cortos_score,155);
  assert.equal(db.status,'activa');
 });
+
+test('cancelling victory confirmation never records points',async()=>{
+ const calls=[];
+ const ctx={
+  scoreSaving:false,scoreWin:'juan',scoreResp:'',scoreType:'normal',scoreTeam:'L',
+  fixed:{},GP:[{member_id:'juan',members:{full_name:'Juan'}}],
+  GAME:{largos_score:190,cortos_score:150,status:'activa'},openGame:'game-2',
+  $:()=>({value:'15'}),nm:m=>m?.full_name||'',alert:()=>{},
+  confirmVictoryChoice:async()=> 'cancel',
+  sb:{from:()=>({select:()=>({eq:()=>({single:async()=>({data:{largos_score:190,cortos_score:150,status:'activa'},error:null})})})}),rpc:async(...args)=>{calls.push(args);return {error:null}}},
+  Date,Number
+ };
+ vm.createContext(ctx);vm.runInContext(source,ctx);
+ await ctx.addScore(null);
+ assert.equal(calls.length,0,'Cancel must not call add_score_event');
+ assert.equal(ctx.scoreWin,'juan','Cancel preserves selection');
+});
+
+test('stale scoreboard blocks recording and requests refresh',async()=>{
+ const calls=[],alerts=[];
+ const ctx={
+  scoreSaving:false,scoreWin:'juan',scoreResp:'',scoreType:'normal',scoreTeam:'L',
+  fixed:{},GP:[{member_id:'juan',members:{full_name:'Juan'}}],
+  GAME:{largos_score:190,cortos_score:150,status:'activa'},openGame:'game-3',
+  $:()=>({value:'15'}),nm:m=>m?.full_name||'',alert:m=>alerts.push(m),
+  render:async()=>{},confirmVictoryChoice:async()=>{throw Error('Must not prompt on stale scoreboard')},
+  sb:{from:()=>({select:()=>({eq:()=>({single:async()=>({data:{largos_score:195,cortos_score:150,status:'activa'},error:null})})})}),rpc:async(...args)=>{calls.push(args);return {error:null}}},
+  Date,Number
+ };
+ vm.createContext(ctx);vm.runInContext(source,ctx);
+ await ctx.addScore(null);
+ assert.equal(calls.length,0);
+ assert.ok(alerts.some(x=>x.includes('marcador cambió')));
+});
