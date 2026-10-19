@@ -84,3 +84,27 @@ test('stale scoreboard blocks recording and requests refresh',async()=>{
  assert.equal(calls.length,0);
  assert.ok(alerts.some(x=>x.includes('marcador cambió')));
 });
+
+test('special event correction requires a newly selected responsible player',async()=>{
+ const calls=[],alerts=[];
+ const ctx={
+  scoreSaving:false,scoreWin:'juan',scoreResp:'luis',scoreType:'chivo',scoreTeam:'L',
+  fixed:{chivo:100},GP:[{member_id:'juan',members:{full_name:'Juan'}},{member_id:'carlos',members:{full_name:'Carlos'}}],
+  GAME:{largos_score:150,cortos_score:90,status:'activa'},openGame:'game-4',
+  $:()=>({value:''}),nm:m=>m?.full_name||'',alert:m=>alerts.push(m),
+  document:{querySelectorAll:()=>[{classList:{remove(){}}}]},
+  scoreToast:()=>{},confirmVictoryChoice:async()=> 'correct',
+  sb:{from:()=>({select:()=>({eq:()=>({single:async()=>({data:{largos_score:150,cortos_score:90,status:'activa'},error:null})})})}),rpc:async(...args)=>{calls.push(args);return {error:null}}},
+  Date,Number
+ };
+ vm.createContext(ctx);vm.runInContext(source,ctx);
+ await ctx.addScore(null);
+ assert.equal(ctx.scoreTeam,'C');
+ assert.equal(ctx.scoreWin,'');
+ assert.equal(ctx.scoreResp,'');
+ await ctx.addScore(null);
+ ctx.scoreWin='carlos';
+ await ctx.addScore(null);
+ assert.equal(calls.length,0);
+ assert.ok(alerts.some(x=>x.includes('responsable')));
+});
