@@ -108,3 +108,47 @@ test('special event correction requires a newly selected responsible player',asy
  assert.equal(calls.length,0);
  assert.ok(alerts.some(x=>x.includes('responsable')));
 });
+
+test('confirmed victory sends exactly one event and reports winner',async()=>{
+ const calls=[],alerts=[],paints=[];
+ const db={largos_score:190,cortos_score:150,status:'activa',winner:null};
+ const ctx={
+  scoreSaving:false,scoreWin:'juan',scoreResp:'',scoreType:'normal',scoreTeam:'L',
+  fixed:{},GP:[{member_id:'juan',members:{full_name:'Juan'}}],
+  GAME:{...db},openGame:'game-victory',lastLocalScoreAt:0,
+  $:()=>({value:'15'}),nm:m=>m?.full_name||'',
+  alert:m=>alerts.push(m),scoreToast:()=>{},confirmVictoryChoice:async()=> 'confirm',
+  paintScore:x=>paints.push({...x}),addHistoryRow:()=>null,resetScoreEntry:()=>{},
+  render:async()=>{},Date,Number,
+  sb:{
+   from:()=>({select:()=>({eq:()=>({single:async()=>({data:{...db},error:null})})})}),
+   rpc:async(name,args)=>{calls.push({name,args});db.largos_score+=args.p_points;db.status='finalizada';db.winner='L';return {error:null}}
+  }
+ };
+ vm.createContext(ctx);vm.runInContext(source,ctx);
+ await ctx.addScore(null);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].args.p_team,'L');
+ assert.equal(calls[0].args.p_credited_member_id,'juan');
+ assert.equal(db.largos_score,205);
+ assert.equal(db.status,'finalizada');
+ assert.equal(db.winner,'L');
+ assert.ok(alerts.some(x=>x.includes('PARTIDA FINALIZADA')));
+});
+
+test('server rejects scoring after finished game and sends no event',async()=>{
+ const calls=[],alerts=[];
+ const ctx={
+  scoreSaving:false,scoreWin:'juan',scoreResp:'',scoreType:'normal',scoreTeam:'L',
+  fixed:{},GP:[{member_id:'juan',members:{full_name:'Juan'}}],
+  GAME:{largos_score:190,cortos_score:150,status:'activa'},openGame:'game-finished',
+  $:()=>({value:'15'}),nm:m=>m?.full_name||'',alert:m=>alerts.push(m),
+  confirmVictoryChoice:async()=>{throw Error('Should not prompt for completed game')},
+  sb:{from:()=>({select:()=>({eq:()=>({single:async()=>({data:{largos_score:205,cortos_score:150,status:'finalizada'},error:null})})})}),rpc:async(...args)=>{calls.push(args);return {error:null}}},
+  Date,Number
+ };
+ vm.createContext(ctx);vm.runInContext(source,ctx);
+ await ctx.addScore(null);
+ assert.equal(calls.length,0);
+ assert.ok(alerts.some(x=>x.includes('finalizada')));
+});
