@@ -42,3 +42,8 @@ jobs:
         env:
           PGPASSWORD: test_only
         run: psql -h localhost -U postgres -d titanes_test -v ON_ERROR_STOP=1 -f scripts/lab-level1-contract-shape.sql
+
+      - name: Execute history-based recalc and audit integration tests
+        env:
+          PGPASSWORD: test_only
+        run: psql -h localhost -U postgres -d titanes_test -v ON_ERROR_STOP=1 -f scripts/lab-level1-history-recalc.sql
