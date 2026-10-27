@@ -13,8 +13,23 @@ if ! grep -q "sb.from('members').select('id,auth_user_id" index.html; then
   exit 1
 fi
 mkdir -p www
-# Mirror web assets into the local Capacitor webDir, excluding native and repository internals.
-tar --exclude='./www' --exclude='./android' --exclude='./ios' --exclude='./node_modules' --exclude='./.git' --exclude='./.github' --exclude='./security' --exclude='./scripts' --exclude='./tests' --exclude='./*.md' --exclude='./*.lock' --exclude='./package.json' --exclude='./capacitor.config.json' -cf - . | (cd www && tar -xf -)
+# Copy only public web assets. Never bundle .env, credentials, SQL or repository metadata.
+node <<'NODE'
+const fs=require('fs'),path=require('path');
+const allowed=new Set(['.html','.js','.mjs','.css','.png','.jpg','.jpeg','.webp','.svg','.ico','.webmanifest','.json','.woff','.woff2','.ttf']);
+const excluded=new Set(['www','android','ios','node_modules','.git','.github','security','scripts','tests','supabase','.vercel']);
+function copy(dir='.') {
+ for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+  if(entry.name.startsWith('.') || excluded.has(entry.name)) continue;
+  const src=path.join(dir,entry.name);
+  if(entry.isDirectory()){copy(src);continue;}
+  if(!entry.isFile() || !allowed.has(path.extname(entry.name).toLowerCase()))continue;
+  if(entry.name==='package.json'||entry.name==='package-lock.json'||entry.name==='capacitor.config.json'||entry.name==='tsconfig.json')continue;
+  const dest=path.join('www',src);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(src,dest);
+ }
+}
+copy();
+NODE
 test -f www/index.html
 if grep -q "sb.from('members').select('\*').eq('auth_user_id',session.user.id)" www/index.html; then
   echo "BLOCKED: stale bundled web app" >&2; exit 1
