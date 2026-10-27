@@ -17,3 +17,9 @@ Estado: **NO APTO TODAVÍA PARA PUBLICACIÓN** hasta cerrar controles críticos.
 
 ## Criterio de salida
 No marcar P0 como cerrado sin evidencia de autorización efectiva de las funciones expuestas, E2E de registro/aprobación/perfil y pruebas de humo de juego. Posponer solo advertencias no explotables o no críticas.
+
+## Avance comprobado de esta sesión
+- Laboratorio Supabase `ybtdxjqodcjoccyuauzv`: se confirmó mediante inventario de esquema que `titanes_security_lab.members` existe, tiene RLS habilitada y 0 filas. No es una réplica exacta de `public.members` en producción.
+- Se inspeccionaron los cuerpos reales de cinco funciones en producción: `admin_add_club_table`, `admin_set_club_table_active`, `admin_pending_membership_requests`, `add_turn_pair_safe`/`add_turn_pair` y `correct_score_event_v2`. Todas presentan comprobaciones internas de rol, identidad o membresía; esto no sustituye las pruebas de autorización con sesiones reales.
+- Se inspeccionaron las Edge Functions `membership-request` y `pin-login` de producción: ambas usan un cliente de servicio. La app invoca `update_my_profile` para el perfil y lee `members` para cargar el usuario.
+- **Pendiente P0:** probar los flujos con identidades de prueba, resolver la lectura `SELECT *` de `members`, aplicar la migración tras validar y generar AAB. No se ha tocado producción.
