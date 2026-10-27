@@ -243,8 +243,39 @@ async function render(){if(!session)return showLogin('in');await loadMe();if(!me
 let z=await sb.auth.getSession();session=z.data.session;await render();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadMe();scheduleRender(50);if(s)realtime()});
 let rtChannel=null;function realtime(){if(!session||rtChannel)return;rtChannel=sb.channel('titanes-live-v5').on('postgres_changes',{event:'*',schema:'public',table:'games'},payload=>{let changed=payload?.new;if(page==='Partidas'&&openGame&&changed?.id===openGame){paintScore(changed);if(changed.status==='finalizada'&&!scoreSaving)scheduleRender(120);return}if(!scoreSaving&&(page==='Inicio'||page==='Ranking'))scheduleRender(180)}).on('postgres_changes',{event:'INSERT',schema:'public',table:'score_events'},payload=>{if(Date.now()-lastLocalScoreAt<1800)return;notificationPing();if(page==='Inicio'||page==='Ranking')scheduleRender(160)}).on('postgres_changes',{event:'INSERT',schema:'public',table:'club_chat'},onClubChatRealtime).on('postgres_changes',{event:'*',schema:'public',table:'challenger_queue'},()=>{if(sub==='Turnos'||page==='Inicio')scheduleRender(180)}).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`member_id=eq.${me.id}`},payload=>{let n=payload?.new;if(n?.type==='liza_200_0')globalClubAlert(n);else notificationPing();if(page==='Inicio'||page==='Ranking')scheduleRender(120)}).subscribe()}
 function appTimeout(p,ms){return Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tiempo de reconexión agotado')),ms))])}
-function safeResumeReload(){let last=Number(sessionStorage.getItem('titanesResumeReload')||0);if(Date.now()-last<10000)return;sessionStorage.setItem('titanesResumeReload',String(Date.now()));saveAppState();location.reload()}
-async function resumeApp(){if(resumeRunning||document.visibilityState==='hidden')return;resumeRunning=true;saveAppState();clearTimeout(renderTimer);renderAgain=false;try{let old=rtChannel;rtChannel=null;if(old)sb.removeChannel(old).catch(()=>{});let s=await appTimeout(sb.auth.getSession(),2200);session=s.data.session;if(!session)return showLogin('in','Tu sesión terminó. Entra nuevamente.');await appTimeout(loadMe(),2500);realtime();await appTimeout(render(),4500);resumeAttempts=0;sessionStorage.removeItem('titanesResumeReload');scoreToast('✅ Aplicación reconectada')}catch(e){console.warn('Reanudación forzada',e);if(navigator.onLine)safeResumeReload();else if(resumeAttempts++<2)setTimeout(resumeApp,1200)}finally{resumeRunning=false}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){lastHiddenAt=Date.now();saveAppState()}else if(Date.now()-lastHiddenAt>700)resumeApp()});document.addEventListener('resume',resumeApp);window.addEventListener('pageshow',()=>{if(lastHiddenAt||performance.getEntriesByType('navigation')[0]?.type==='back_forward')resumeApp()});window.addEventListener('online',resumeApp);window.addEventListener('focus',()=>{if(lastHiddenAt&&Date.now()-lastHiddenAt>700)resumeApp()});document.addEventListener('pointerdown',()=>{if(lastHiddenAt&&Date.now()-lastHiddenAt>700&&!resumeRunning)resumeApp()},{passive:true});
+// Reanudar sin reconstruir la navegación ni recargar la WebView.
+async function resumeApp(){
+ if(resumeRunning||document.visibilityState==='hidden'||!navigator.onLine||!session)return;
+ resumeRunning=true;
+ try{
+  const result=await appTimeout(sb.auth.getSession(),5000);
+  if(result.error)throw result.error;
+  if(!result.data.session){console.warn('Sesión no disponible al reanudar; se conserva la vista.');return}
+  session=result.data.session;
+  if(!rtChannel)realtime();
+  // La pantalla actual permanece intacta. Actualizar datos solo si no hay una
+  // anotación en curso; una operación pendiente no debe repetirse automáticamente.
+  if(!scoreSaving) scheduleRender(180);
+  resumeAttempts=0;
+ }catch(e){
+  console.warn('Reanudación sin recarga:',e);
+  // Nunca recargar automáticamente: puede perder contexto y operaciones pendientes.
+ }finally{resumeRunning=false}
+}
+function scheduleResume(){
+ if(document.visibilityState==='hidden')return;
+ if(resumeRefreshTimer)clearTimeout(resumeRefreshTimer);
+ resumeRefreshTimer=setTimeout(()=>{resumeRefreshTimer=null;resumeApp()},400);
+}
+let resumeRefreshTimer=null;
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden'){lastHiddenAt=Date.now();saveAppState()}
+ else if(lastHiddenAt) scheduleResume();
+});
+document.addEventListener('resume',scheduleResume);
+window.addEventListener('pageshow',scheduleResume);
+window.addEventListener('online',scheduleResume);
+window.addEventListener('focus',()=>{if(lastHiddenAt)scheduleResume()});
+
 realtime();
 </script><!--ADMIN_DIRECT_CREATE_V1--><!--TITANES_FULL_MARKER_0830--><!--TITANES_DASHBOARD_V4--><!--NEGATIVE_FAULTS_UI_V2--><!--SCORING_V2_INTEGRATED_0903--><!--HOME_POINTS_LEADERS_V1--><!--PROFILE_PHOTO_MOBILE_FIX_V1--><script type="module" src="/tombola.js"></script><script src="/voice-control.js?v=1"></script><script type="module" src="/home-turnos-v3.js?v=4"></script><script type="module" src="/pizarra-official.js?v=1"></script><script type="module" src="/game-start-control.js?v=1"></script><script type="module" src="/turn-system-v4.js?v=5"></script><script type="module" src="/turn-capacity-v2.js?v=2"></script><script type="module" src="/turn-edit-search.js?v=2"></script><script type="module" src="/game-player-edit.js?v=2"></script><script type="module" src="/history-entry.js?v=1"></script><script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}</script></body></html>
