@@ -50,3 +50,10 @@ Se inspeccionó el código **desplegado** de `approve-membership` (versión 3, A
 ## Auditoría de grants ampliada
 
 La consulta `information_schema.role_table_grants` confirmó que **anon y authenticated** tienen actualmente INSERT, SELECT, UPDATE, DELETE, TRUNCATE, REFERENCES y TRIGGER en `public.members` (los mismos tipos de grants de tabla también aparecen para `service_role`). RLS limita operaciones por filas, pero no reemplaza la restricción de permisos de tabla/columnas. Se añadió `security/sql/member-privileges-hardening.sql` como migración **candidata, no ejecutada**. Revoca grants directos de anon/authenticated, mantiene SELECT para authenticated y UPDATE limitado a los cuatro campos de perfil. Antes de desplegar: comprobar triggers de registro, funciones SECURITY INVOKER y flujos de directorio, perfiles y administración con cuentas de prueba. No modificar grants de service_role.
+
+## Compatibilidad comprobada mediante inspección de producción
+
+- Trigger `auth.users` `on_auth_user_created_titanes` ejecuta `handle_new_auth_user()` como `SECURITY DEFINER`; crea miembro `role='miembro'`, `active=false`, `access_status='pendiente'` y usa `ON CONFLICT` para actualizar datos de perfil. Este flujo no requiere un GRANT INSERT de tabla a `authenticated` cuando el propietario del procedimiento conserva sus privilegios. **No probado mediante alta real.**
+- Trigger en `public.members`: `before_member_insert_activate_manual` (BEFORE INSERT), sin trigger de actualización identificado en esa tabla.
+- `admin_member_directory`, `admin_pending_membership_requests`, `admin_set_simple_login`, `admin_set_simple_login_service` son `SECURITY DEFINER`; `update_my_profile` es `SECURITY INVOKER`, de ahí los cuatro permisos UPDATE de columna propuestos.
+- La migración candidata conserva `service_role` y no modifica políticas RLS ni filas de jugadores. Sigue pendiente la validación de extremo a extremo, especialmente permisos de funciones, alta real y actualización de perfil.
