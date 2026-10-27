@@ -85,3 +85,14 @@ Se ejecutaron sentencias dentro de `BEGIN; SET LOCAL ROLE authenticated; ...; RO
 - `SET LOCAL ROLE authenticated` confirmó `current_user='authenticated'`, sin UPDATE de role y con UPDATE de full_name.
 
 Estas pruebas son negativas/positivas de autorización SQL en el esquema aislado. No son pruebas de RLS con JWT real ni de registro/aprobación mediante Edge Functions. En producción se comprobó adicionalmente con `has_function_privilege` que `anon` y `authenticated` no pueden ejecutar directamente `service_finalize_membership_request(uuid,uuid,uuid)`.
+
+## Pruebas funcionales RLS simuladas en laboratorio (transacciones revertidas)
+
+Usando dos UUID ficticios, `SET LOCAL ROLE authenticated` y `request.jwt.claim.sub` dentro de `BEGIN ... ROLLBACK`:
+
+1. Usuario A consulta filas de A y B: **solo 1 fila visible** (A), esperado.
+2. Usuario A intenta modificar `nickname` de B: sentencia aceptada pero **ninguna fila de B visible/actualizable**; la consulta de A conserva nickname nulo. Resultado coherente con RLS (la sentencia no devolvió contador de filas).
+3. Usuario A modifica su propio `nickname`: **RETURNING 'edited-own'**, esperado.
+4. Usuario A intenta insertar registro con `auth_user_id` de B: **ERROR 42501 por política RLS**, esperado.
+
+No se creó ningún usuario real ni se conservaron filas: todas las transacciones fueron revertidas. Estas pruebas validan un modelo simplificado de RLS, **no** los flujos de registro y aprobación de la aplicación real. El proyecto de laboratorio no tiene Edge Functions desplegadas (`list_edge_functions=[]`), así que no puede ejecutarse aquí una prueba extremo a extremo de esas funciones. No se ha aplicado la migración a producción.
