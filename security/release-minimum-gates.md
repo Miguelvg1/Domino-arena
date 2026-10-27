@@ -32,3 +32,8 @@ No marcar P0 como cerrado sin evidencia de autorización efectiva de las funcion
 
 ## Comprobación directa adicional de laboratorio
 Consulta de privilegios SQL en `titanes_security_lab.members` (proyecto de laboratorio): `authenticated` UPDATE `role` = false; UPDATE `active` = false; UPDATE `access_status` = false; UPDATE `full_name` = true; `anon` UPDATE `full_name` = false. **PASS para el esquema aislado.** No prueba los permisos de producción ni sustituye el E2E con identidades reales.
+
+## Hallazgo confirmado en PRODUCCIÓN — bloqueo P0
+Consulta SQL de permisos efectiva sobre `public.members` en proyecto `hvpyngkqtqzvmweavego`: `has_column_privilege('authenticated','public.members','role','UPDATE') = true` y `has_column_privilege('authenticated','public.members','pin_hash','SELECT') = true`. Por tanto **la vulnerabilidad de permisos y la exposición de hash por API no están corregidas en producción**. Contraste con laboratorio aislado: `role UPDATE = false`, `full_name UPDATE = true`, `anon full_name UPDATE = false`.
+
+**Acción necesaria:** validar la compatibilidad de RPC/vistas y desplegar conjuntamente cambio frontend y migración de permisos; comprobar privilegios efectivos y ejecutar smoke tests. No publicar mientras el riesgo P0 permanezca abierto.
