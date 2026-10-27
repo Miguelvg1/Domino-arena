@@ -29,3 +29,6 @@ No marcar P0 como cerrado sin evidencia de autorización efectiva de las funcion
 - Migración SQL candidata: reemplazado `GRANT SELECT` de toda la tabla por `GRANT SELECT` de columnas permitidas, excluyendo `pin_hash` (`d2cef2`).
 - **No desplegar esta migración aisladamente**: la consulta de perfil y el cambio de GRANT deben entrar juntos; además se deben revisar todas las dependencias de SELECT sobre `members`, incluidas vistas y RPC, y probar con sesiones reales. El laboratorio simplificado no replica toda la producción.
 - No se ha aplicado DDL en producción. Pendiente la validación integrada y autorización de publicación.
+
+## Comprobación directa adicional de laboratorio
+Consulta de privilegios SQL en `titanes_security_lab.members` (proyecto de laboratorio): `authenticated` UPDATE `role` = false; UPDATE `active` = false; UPDATE `access_status` = false; UPDATE `full_name` = true; `anon` UPDATE `full_name` = false. **PASS para el esquema aislado.** No prueba los permisos de producción ni sustituye el E2E con identidades reales.
