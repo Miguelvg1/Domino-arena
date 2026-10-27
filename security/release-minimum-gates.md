@@ -23,3 +23,9 @@ No marcar P0 como cerrado sin evidencia de autorización efectiva de las funcion
 - Se inspeccionaron los cuerpos reales de cinco funciones en producción: `admin_add_club_table`, `admin_set_club_table_active`, `admin_pending_membership_requests`, `add_turn_pair_safe`/`add_turn_pair` y `correct_score_event_v2`. Todas presentan comprobaciones internas de rol, identidad o membresía; esto no sustituye las pruebas de autorización con sesiones reales.
 - Se inspeccionaron las Edge Functions `membership-request` y `pin-login` de producción: ambas usan un cliente de servicio. La app invoca `update_my_profile` para el perfil y lee `members` para cargar el usuario.
 - **Pendiente P0:** probar los flujos con identidades de prueba, resolver la lectura `SELECT *` de `members`, aplicar la migración tras validar y generar AAB. No se ha tocado producción.
+
+## Corrección preparada — 27 oct 2026
+- Rama de seguridad: `index.html` ahora solicita columnas explícitas de `members` y excluye `pin_hash` al cargar el perfil (`b43382d`).
+- Migración SQL candidata: reemplazado `GRANT SELECT` de toda la tabla por `GRANT SELECT` de columnas permitidas, excluyendo `pin_hash` (`d2cef2`).
+- **No desplegar esta migración aisladamente**: la consulta de perfil y el cambio de GRANT deben entrar juntos; además se deben revisar todas las dependencias de SELECT sobre `members`, incluidas vistas y RPC, y probar con sesiones reales. El laboratorio simplificado no replica toda la producción.
+- No se ha aplicado DDL en producción. Pendiente la validación integrada y autorización de publicación.
