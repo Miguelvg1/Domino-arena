@@ -26,3 +26,14 @@ Proyecto productivo: `hvpyngkqtqzvmweavego`. **No ejecutar cambios sobre producc
 No declarar corregida la vulnerabilidad hasta tener pruebas negativas de escalada de privilegios, pruebas positivas de administración, y regresión de partidas, rankings, turnos y perfiles.
 
 Referencias: https://supabase.com/docs/guides/database/postgres/column-level-security
+
+## Revisión de aprobación de membresías (2026-10-27)
+
+Se inspeccionaron ambas sobrecargas `service_finalize_membership_request`:
+
+- Firmas: `(uuid,uuid,text,text,uuid)` y `(uuid,uuid,uuid)`.
+- Ambas son `SECURITY DEFINER` y aceptan `p_admin_auth_user_id`; su cuerpo comprueba la membresía admin asociada, pero no compara ese parámetro con `auth.uid()`.
+- **Dato decisivo**: `information_schema.routine_privileges` muestra EXECUTE solamente para `postgres` y `service_role`, no para `anon` ni `authenticated`. Por tanto, **no hay evidencia de que un jugador pueda invocar directamente estas funciones mediante la API con su sesión**. No catalogar como explotación confirmada.
+- Antes de endurecer la firma, verificar el servicio backend que las invoca. Si la ejecución está restringida a `service_role`, la identidad del administrador debe verificarse en ese servicio, o usar una ruta con JWT autenticado y comprobación explícita de `auth.uid()`.
+- `update_my_profile` actualiza `full_name`, `nickname`, `phone`, `photo_url`. El laboratorio se ajustó para conceder UPDATE solo en estas cuatro columnas.
+- El laboratorio ahora concede INSERT solo en `auth_user_id`, `full_name`, `nickname`, `phone`, `photo_url`; esto **no replica** el flujo de aprobación real de producción y requiere pruebas de integración antes del despliegue.
