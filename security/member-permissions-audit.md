@@ -74,3 +74,14 @@ Ejecutadas con `has_column_privilege` y `has_table_privilege` sobre `titanes_sec
 | anon UPDATE tabla | DENEGADO |
 
 Estas son **pruebas de privilegios**, no pruebas funcionales de sesión JWT, RLS, alta real o llamadas a Edge Functions. La migración candidata de producción difiere del laboratorio en INSERT: deliberadamente no concede INSERT a authenticated porque el alta real usa un trigger SECURITY DEFINER. No promover hasta probar ese flujo.
+
+## Pruebas SQL reales con rol authenticated en laboratorio
+
+Se ejecutaron sentencias dentro de `BEGIN; SET LOCAL ROLE authenticated; ...; ROLLBACK;`, con `WHERE false` para no modificar datos. El motor PostgreSQL verificó permisos sobre la sentencia, no solamente metadatos:
+
+- `UPDATE titanes_security_lab.members SET role='admin' WHERE false` -> **ERROR 42501 permission denied** (esperado).
+- `UPDATE titanes_security_lab.members SET access_status='activo' WHERE false` -> **ERROR 42501 permission denied** (esperado).
+- `UPDATE titanes_security_lab.members SET full_name='Prueba' WHERE false` -> **sentencia aceptada** (esperado; cero filas alteradas).
+- `SET LOCAL ROLE authenticated` confirmó `current_user='authenticated'`, sin UPDATE de role y con UPDATE de full_name.
+
+Estas pruebas son negativas/positivas de autorización SQL en el esquema aislado. No son pruebas de RLS con JWT real ni de registro/aprobación mediante Edge Functions. En producción se comprobó adicionalmente con `has_function_privilege` que `anon` y `authenticated` no pueden ejecutar directamente `service_finalize_membership_request(uuid,uuid,uuid)`.
