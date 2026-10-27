@@ -37,3 +37,12 @@ Se inspeccionaron ambas sobrecargas `service_finalize_membership_request`:
 - Antes de endurecer la firma, verificar el servicio backend que las invoca. Si la ejecución está restringida a `service_role`, la identidad del administrador debe verificarse en ese servicio, o usar una ruta con JWT autenticado y comprobación explícita de `auth.uid()`.
 - `update_my_profile` actualiza `full_name`, `nickname`, `phone`, `photo_url`. El laboratorio se ajustó para conceder UPDATE solo en estas cuatro columnas.
 - El laboratorio ahora concede INSERT solo en `auth_user_id`, `full_name`, `nickname`, `phone`, `photo_url`; esto **no replica** el flujo de aprobación real de producción y requiere pruebas de integración antes del despliegue.
+
+## Verificación de Edge Functions en producción
+
+Se inspeccionó el código **desplegado** de `approve-membership` (versión 3, ACTIVE) y `admin-create-member`.
+
+- `approve-membership` requiere token Bearer, valida la sesión mediante `admin.auth.getUser(token)`, y transmite **`u.user.id` derivado del token validado**, no un ID de administrador proporcionado por el cliente, a `service_finalize_membership_request`. La función SQL comprueba que ese ID pertenece a un administrador activo. Esta ruta contiene comprobaciones de identidad y rol; no se ha demostrado una escalada en esta ruta.
+- `admin-create-member` valida igualmente `getUser(token)` y busca un miembro con `role='admin'`, `active=true`, `access_status='activo'`, `deleted_at IS NULL` antes de crear usuarios. Usa `service_role` para escrituras administrativas legítimas.
+- La **amenaza principal persiste** en los privilegios UPDATE/INSERT excesivos de `public.members`: un usuario podría intentar cambiar su propio rol por una ruta directa si las políticas lo permiten; las verificaciones de rol del backend solo son confiables si `members.role` está protegido.
+- No revocar permisos `service_role` ni alterar las Edge Functions sin pruebas. El siguiente cambio productivo debe centrarse en restringir permisos de cliente sobre `members` preservando las escrituras administrativas de `service_role`.
