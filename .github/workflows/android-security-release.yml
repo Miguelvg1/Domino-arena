@@ -1,0 +1,44 @@
+name: Android 1.0.3 security build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'capacitor.config.json'
+      - 'scripts/prepare-android-release.sh'
+      - '.github/workflows/android-security-release.yml'
+jobs:
+  android-aab:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install JS dependencies
+        run: npm ci
+      - name: Initialize native Android project
+        run: npx cap add android
+      - name: Prepare latest web bundle
+        run: bash scripts/prepare-android-release.sh
+      - name: Set release version
+        run: |
+          sed -i -E 's/versionCode [0-9]+/versionCode 4/; s/versionName "[^"]+"/versionName "1.0.3"/' android/app/build.gradle
+          grep -E 'versionCode 4|versionName "1.0.3"' android/app/build.gradle
+      - name: Compile release bundle (unsigned)
+        run: cd android && ./gradlew bundleRelease --no-daemon
+      - name: Upload unsigned AAB for verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: titanes-1.0.3-unsigned-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
