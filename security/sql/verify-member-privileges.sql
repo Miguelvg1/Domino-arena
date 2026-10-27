@@ -10,7 +10,9 @@ BEGIN
  IF has_column_privilege('authenticated','public.members','auth_user_id','UPDATE') THEN RAISE EXCEPTION 'FAIL: owner UPDATE'; END IF;
  IF has_column_privilege('authenticated','public.members','access_status','UPDATE') THEN RAISE EXCEPTION 'FAIL: status UPDATE'; END IF;
  IF has_column_privilege('authenticated','public.members','active','UPDATE') THEN RAISE EXCEPTION 'FAIL: active UPDATE'; END IF;
- IF NOT has_table_privilege('authenticated','public.members','SELECT') THEN RAISE EXCEPTION 'FAIL: member SELECT'; END IF;
+ IF NOT has_column_privilege('authenticated','public.members','id','SELECT') THEN RAISE EXCEPTION 'FAIL: member id SELECT'; END IF;
+ IF has_column_privilege('authenticated','public.members','pin_hash','SELECT') THEN RAISE EXCEPTION 'FAIL: PIN hash SELECT'; END IF;
+ IF has_column_privilege('anon','public.members','pin_hash','SELECT') THEN RAISE EXCEPTION 'FAIL: anon PIN hash SELECT'; END IF;
  IF NOT has_column_privilege('authenticated','public.members','full_name','UPDATE') THEN RAISE EXCEPTION 'FAIL: name UPDATE'; END IF;
  IF NOT has_column_privilege('authenticated','public.members','nickname','UPDATE') THEN RAISE EXCEPTION 'FAIL: nickname UPDATE'; END IF;
  IF NOT has_column_privilege('authenticated','public.members','phone','UPDATE') THEN RAISE EXCEPTION 'FAIL: phone UPDATE'; END IF;
