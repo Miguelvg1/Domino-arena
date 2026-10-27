@@ -57,3 +57,20 @@ La consulta `information_schema.role_table_grants` confirmó que **anon y authen
 - Trigger en `public.members`: `before_member_insert_activate_manual` (BEFORE INSERT), sin trigger de actualización identificado en esa tabla.
 - `admin_member_directory`, `admin_pending_membership_requests`, `admin_set_simple_login`, `admin_set_simple_login_service` son `SECURITY DEFINER`; `update_my_profile` es `SECURITY INVOKER`, de ahí los cuatro permisos UPDATE de columna propuestos.
 - La migración candidata conserva `service_role` y no modifica políticas RLS ni filas de jugadores. Sigue pendiente la validación de extremo a extremo, especialmente permisos de funciones, alta real y actualización de perfil.
+
+## Pruebas estáticas de permisos de laboratorio
+
+Ejecutadas con `has_column_privilege` y `has_table_privilege` sobre `titanes_security_lab.members`:
+
+| Comprobación | Resultado |
+|---|---|
+| authenticated UPDATE role | DENEGADO |
+| authenticated UPDATE full_name | PERMITIDO |
+| authenticated INSERT role | DENEGADO |
+| authenticated INSERT full_name | PERMITIDO |
+| authenticated UPDATE access_status | DENEGADO |
+| authenticated UPDATE phone | PERMITIDO |
+| anon INSERT tabla | DENEGADO |
+| anon UPDATE tabla | DENEGADO |
+
+Estas son **pruebas de privilegios**, no pruebas funcionales de sesión JWT, RLS, alta real o llamadas a Edge Functions. La migración candidata de producción difiere del laboratorio en INSERT: deliberadamente no concede INSERT a authenticated porque el alta real usa un trigger SECURITY DEFINER. No promover hasta probar ese flujo.
