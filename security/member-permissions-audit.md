@@ -96,3 +96,14 @@ Usando dos UUID ficticios, `SET LOCAL ROLE authenticated` y `request.jwt.claim.s
 4. Usuario A intenta insertar registro con `auth_user_id` de B: **ERROR 42501 por política RLS**, esperado.
 
 No se creó ningún usuario real ni se conservaron filas: todas las transacciones fueron revertidas. Estas pruebas validan un modelo simplificado de RLS, **no** los flujos de registro y aprobación de la aplicación real. El proyecto de laboratorio no tiene Edge Functions desplegadas (`list_edge_functions=[]`), así que no puede ejecutarse aquí una prueba extremo a extremo de esas funciones. No se ha aplicado la migración a producción.
+
+## Triaje de cinco funciones SECURITY DEFINER en producción
+
+Inspección read-only del cuerpo real:
+- `admin_add_club_table`: valida `auth.uid()` contra miembro admin activo antes de insertar mesa. **Control presente**.
+- `admin_set_club_table_active`: valida admin activo y bloquea desactivación de mesa con partida en curso. **Control presente**.
+- `admin_pending_membership_requests`: devuelve solicitudes únicamente si existe miembro admin activo asociado a `auth.uid()`. **Control presente**.
+- `add_turn_pair_safe`: valida IDs y delega en `add_turn_pair`; este exige `is_active_club_member()`. **Control presente en función delegada**.
+- `correct_score_event_v2`: exige `is_active_club_member()`, y admin para editar partida finalizada; para partidas no finalizadas permite correcciones a cualquier miembro activo, según la regla vigente. **Control presente, revisar regla de negocio**.
+
+Que el Security Advisor marque EXECUTE por `anon` no significa que estas cinco funciones permitan operaciones anónimas: los controles internos revisados requieren identidad o membresía activa. No se ha ejecutado ataque de prueba ni se han inspeccionado las otras funciones señaladas. No retirar EXECUTE indiscriminadamente porque la app invoca algunas RPC directamente.
