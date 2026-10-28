@@ -36,6 +36,25 @@ jobs:
           test -f www/index.html
       - name: Generate Android native project
         run: npx cap add android
+      - name: Isolate debug installation from production
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle')
+          s = p.read_text()
+          needle = '    buildTypes {'
+          assert s.count(needle) == 1, 'Unexpected Android Gradle structure'
+          s = s.replace(needle, '''    buildTypes {
+                  debug {
+                      applicationIdSuffix ".experimental"
+                      versionNameSuffix "-experimental"
+                  }
+          ''', 1)
+          p.write_text(s)
+          assert 'applicationIdSuffix ".experimental"' in p.read_text()
+          PY
       - name: Assemble unsigned debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
