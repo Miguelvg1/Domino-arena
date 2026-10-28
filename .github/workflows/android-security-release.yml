@@ -18,18 +18,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
-      - name: Install JS dependencies
-        run: npm ci
-      - name: Initialize native Android project
-        run: npx cap add android
+      # This repository has no committed package-lock.json. Do not use npm ci
+      # or setup-node npm cache until a reviewed lockfile is committed.
+      - name: Install JS dependencies without running lifecycle scripts
+        run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
       - name: Prepare latest web bundle
         run: bash scripts/prepare-android-release.sh
+      - name: Initialize native Android project
+        run: npx cap add android
+      - name: Synchronize Android web assets
+        run: npx cap sync android
+      - name: Verify Android 16 target API for Play submissions
+        run: |
+          if ! grep -Eq 'targetSdkVersion[[:space:]]*=[[:space:]]*36' android/variables.gradle; then
+            echo "::error::Google Play requires target API 36 for Android app updates since 2026-08-31. Review and upgrade Capacitor/native SDK before producing a release bundle."
+            exit 1
+          fi
       - name: Set release version
         run: |
           sed -i -E 's/versionCode [0-9]+/versionCode 4/; s/versionName "[^"]+"/versionName "1.0.3"/' android/app/build.gradle
