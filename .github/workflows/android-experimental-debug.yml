@@ -1,5 +1,8 @@
 name: Android experimental debug build
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/android-experimental-debug.yml'
   workflow_dispatch:
 jobs:
   build-debug:
