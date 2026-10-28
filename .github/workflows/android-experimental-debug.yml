@@ -48,12 +48,12 @@ jobs:
           assert s.count(needle) == 1, 'Unexpected Android Gradle structure'
           s = s.replace(needle, '''    buildTypes {
                   debug {
-                      applicationIdSuffix ".experimental"
+                      applicationIdSuffix ".experimental2"
                       versionNameSuffix "-experimental"
                   }
           ''', 1)
           p.write_text(s)
-          assert 'applicationIdSuffix ".experimental"' in p.read_text()
+          assert 'applicationIdSuffix ".experimental2"' in p.read_text()
           PY
       - name: Assemble unsigned debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
