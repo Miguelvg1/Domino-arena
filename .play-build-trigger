@@ -1,6 +1,5 @@
 Titanes Dominó Android build trigger
-Version: 1.0.2
-VersionCode: 3
-Reason: restore automatic global turn system and prevent manual match creation
-Attempt: 2
-Date: 2026-09-14
+Version: 1.0.3
+VersionCode: 4
+Reason: release Android startup and profile loading fixes verified in Experimental 3
+Date: 2026-10-28
