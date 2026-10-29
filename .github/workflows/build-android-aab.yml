@@ -76,7 +76,7 @@ jobs:
           p = Path('android/app/build.gradle')
           s = p.read_text()
           s = s.replace('versionCode 1', 'versionCode 4')
-          s = s.replace('versionName "1.0"', 'versionName "1.0.2"')
+          s = s.replace('versionName "1.0"', 'versionName "1.0.3"')
           p.write_text(s)
           PY
 
