@@ -3,3 +3,4 @@ Version: 1.0.3
 VersionCode: 4
 Reason: release Android startup and profile loading fixes verified in Experimental 3
 Date: 2026-10-28
+Rebuild: minSdkVersion 24 required by Google Play automatic protection
