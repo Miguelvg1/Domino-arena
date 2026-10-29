@@ -1,0 +1,83 @@
+name: Android signed production release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  signed-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify signing configuration
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::Missing signing secret $name"; exit 1; fi
+          done
+      - name: Install dependencies without postinstall mutations
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Stage current production web bundle
+        run: |
+          mkdir -p www
+          find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' -o -name '*.json' -o -name '*.webmanifest' -o -name '*.png' -o -name '*.svg' -o -name '*.ico' \) -exec cp {} www/ \;
+          test -s www/index.html
+      - name: Generate Android project
+        run: npx cap add android
+      - name: Configure signed production build
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release-keystore.jks
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          assert 'applicationId "com.titanesdomino.app"' in s
+          needle='    buildTypes {'
+          assert s.count(needle)==1
+          s=s.replace(needle, """    signingConfigs {
+                  production {
+                      storeFile file('release-keystore.jks')
+                      storePassword System.getenv('KEYSTORE_PASSWORD')
+                      keyAlias System.getenv('KEY_ALIAS')
+                      keyPassword System.getenv('KEY_PASSWORD')
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.production
+                  }
+          """,1)
+          p.write_text(s)
+          PY
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Assemble signed release APK and Play AAB
+        run: cd android && chmod +x gradlew && ./gradlew assembleRelease bundleRelease --no-daemon
+      - name: Upload signed release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: titanes-android-signed-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          retention-days: 7
+      - name: Remove signing file
+        if: always()
+        run: rm -f android/app/release-keystore.jks
