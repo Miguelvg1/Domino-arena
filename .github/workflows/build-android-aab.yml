@@ -71,6 +71,10 @@ jobs:
           s = variables.read_text()
           s = s.replace('compileSdkVersion = 35', 'compileSdkVersion = 36')
           s = s.replace('targetSdkVersion = 35', 'targetSdkVersion = 36')
+          s = s.replace('minSdkVersion = 23', 'minSdkVersion = 24')
+          s = s.replace('minSdkVersion = 22', 'minSdkVersion = 24')
+          if 'minSdkVersion = 24' not in s:
+              raise RuntimeError('No se pudo establecer minSdkVersion 24')
           variables.write_text(s)
 
           p = Path('android/app/build.gradle')
