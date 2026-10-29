@@ -36,7 +36,7 @@ jobs:
           test -f www/index.html
       - name: Generate Android native project
         run: npx cap add android
-      - name: Isolate debug installation from production
+      - name: Use a new isolated package for this recovery build
         shell: bash
         run: |
           set -euo pipefail
@@ -48,12 +48,12 @@ jobs:
           assert s.count(needle) == 1, 'Unexpected Android Gradle structure'
           s = s.replace(needle, '''    buildTypes {
                   debug {
-                      applicationIdSuffix ".experimental2"
+                      applicationIdSuffix ".experimental3"
                       versionNameSuffix "-experimental"
                   }
           ''', 1)
           p.write_text(s)
-          assert 'applicationIdSuffix ".experimental2"' in p.read_text()
+          assert 'applicationIdSuffix ".experimental3"' in p.read_text()
           PY
       - name: Assemble unsigned debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
