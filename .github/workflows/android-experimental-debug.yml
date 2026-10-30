@@ -1,0 +1,65 @@
+name: Android experimental debug build
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/android-experimental-debug.yml'
+  workflow_dispatch:
+jobs:
+  build-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Configure Android SDK from runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          test -x "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+      - name: Install Capacitor without postinstall mutations
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Stage static web files for Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p www
+          find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' -o -name '*.json' -o -name '*.webmanifest' -o -name '*.png' -o -name '*.svg' -o -name '*.ico' \) -exec cp {} www/ \;
+          test -f www/index.html
+      - name: Generate Android native project
+        run: npx cap add android
+      - name: Use a new isolated package for this recovery build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle')
+          s = p.read_text()
+          needle = '    buildTypes {'
+          assert s.count(needle) == 1, 'Unexpected Android Gradle structure'
+          s = s.replace(needle, '''    buildTypes {
+                  debug {
+                      applicationIdSuffix ".experimental3"
+                      versionNameSuffix "-experimental"
+                  }
+          ''', 1)
+          p.write_text(s)
+          assert 'applicationIdSuffix ".experimental3"' in p.read_text()
+          PY
+      - name: Assemble unsigned debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: titanes-android-experimental-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 7
