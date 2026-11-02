@@ -1,5 +1,11 @@
 {
   "cleanUrls": true,
   "buildCommand": "node scripts/patch_finanzas_recovery.js",
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/privacidad",
+      "destination": "/privacidad.html"
+    }
+  ]
 }
