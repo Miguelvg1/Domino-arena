@@ -13,7 +13,7 @@ Al anotar **30 o 60 puntos**, solicitar un concepto antes de confirmar: dominada
 - Contar solo eventos efectivos: excluir anulados, usar el concepto actualizado tras corrección y recalcular al cerrar/reabrir partidas.
 - No atribuir puntos por dominación a eventos no clasificados ni asumir que cualquier puntuación manual de 1–250 corresponde a dominación.
 - Evitar doble conteo por reintentos de cierre, sincronización o reconexión; resultado determinista por ID de partida.
-- Mostrar dos cuadros separados, «Lizas propinadas hoy» y «Lizas recibidas hoy», en Datos del jugador del día, con zona horaria de República Dominicana; distinguir datos completos e históricos indeterminados.
+- Mostrar dos cuadros separados de «Lizas propinadas» y «Lizas recibidas» en Datos del jugador para **tres períodos seleccionables: día, semana y mes**. Usar zona horaria de República Dominicana (America/Santo_Domingo), semana de lunes a domingo y mes calendario; distinguir datos completos e históricos indeterminados. Los contadores de cada período deben derivarse de partidas finalizadas dentro de ese período, sin duplicar eventos al cambiar de filtro.
 - Asegurar que los jugadores de ambos equipos y los eventos pertenecen a la misma partida; preservar reglas de permisos/RLS y validaciones del servidor.
 
 ## Pruebas obligatorias
@@ -27,6 +27,7 @@ Al anotar **30 o 60 puntos**, solicitar un concepto antes de confirmar: dominada
 8. Evento legado sin concepto: no adjudicar ni propinada ni recibida automáticamente.
 9. Doble cierre, reconexión y concurrencia: no duplicar estadísticas.
 10. Partida en curso, empate/incompleta o anulada: no contar liza.
+11. Validar lizas propinadas y recibidas para día, semana y mes, incluyendo cambios de período, fin de mes y semana cruzando meses.
 
 ## Despliegue
 Implementar y validar primero en laboratorio. No fusionar esta rama ni desplegar cambios de base de datos hasta comprobar paridad de contratos entre cliente, funciones RPC y Supabase y contar con autorización explícita.
