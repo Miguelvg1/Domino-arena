@@ -1,34 +1,42 @@
-/**
- * Pure liza calculations. No production database writes.
- * A liza requires a completed game, a valid winner, and zero
- * dominada points for the losing team. Legacy unclassified events
- * make the result indeterminate rather than an automatic liza.
- */
-export function classifyLiza(game, events) {
-  if (game?.status !== 'finalizada' || !['L','C'].includes(game?.winner)) return 'not_applicable';
-  const loser = game.winner === 'L' ? 'C' : 'L';
-  const losingEvents = events.filter(e => e.team === loser && !e.voided_at && !e.is_voided && e.status !== 'anulado');
-  if (losingEvents.some(e => e.event_type === 'normal' && (e.concept === 'dominada' || e.score_concept === 'dominada'))) return 'no';
-  if (losingEvents.some(e => !e.concept && !e.score_concept && e.event_type === 'normal')) return 'indeterminate';
-  return 'yes';
+/** Pure calculation only; requires classified scoring events before use in production. */
+const ZONE='America/Santo_Domingo';
+const formatter=new Intl.DateTimeFormat('en-CA',{timeZone:ZONE,year:'numeric',month:'2-digit',day:'2-digit'});
+function dateParts(date){const p=Object.fromEntries(formatter.formatToParts(new Date(date)).map(x=>[x.type,x.value]));return [Number(p.year),Number(p.month),Number(p.day)];}
+function dayNumber([y,m,d]){return Math.floor(Date.UTC(y,m-1,d)/86400000);}
+export function periodBounds(period,now=new Date()){
+ const parts=dateParts(now),n=dayNumber(parts),weekday=(new Date(n*86400000).getUTCDay()+6)%7;
+ let start,end;
+ if(period==='dia'){start=n;end=n+1;}
+ else if(period==='semana'){start=n-weekday;end=start+7;}
+ else if(period==='mes'){start=dayNumber([parts[0],parts[1],1]);end=dayNumber(parts[1]===12?[parts[0]+1,1,1]:[parts[0],parts[1]+1,1]);}
+ else throw new Error('Período inválido');
+ const iso=v=>new Date(v*86400000+4*3600000).toISOString();
+ return {from:iso(start),to:iso(end)};
 }
-export function lizaTotals(games, players, events, from, to) {
-  const result = new Map();
-  const ensure = id => { if (!result.has(id)) result.set(id, { propinadas: 0, recibidas: 0, indeterminadas: 0 }); return result.get(id); };
-  for (const game of games) {
-    const closed = game.finished_at || game.completed_at || game.ended_at;
-    if (!closed || closed < from || closed >= to) continue;
-    const status = classifyLiza(game, events.filter(e => e.game_id === game.id));
-    if (status === 'not_applicable' || status === 'no') continue;
-    const members = players.filter(p => p.game_id === game.id);
-    for (const p of members) {
-      const id = p.member_id;
-      if (!id) continue;
-      const total = ensure(id);
-      if (status === 'indeterminate') total.indeterminadas++;
-      else if (p.team === game.winner) total.propinadas++;
-      else total.recibidas++;
-    }
+export function classifyLiza(game,events){
+ if(game?.status!=='finalizada'||!['L','C'].includes(game?.winner))return 'not_applicable';
+ const loser=game.winner==='L'?'C':'L';
+ const active=events.filter(e=>e.team===loser&&e.voided!==true);
+ if(active.some(e=>e.event_type==='normal'&&(e.concept==='dominada'||e.score_concept==='dominada')))return 'no';
+ if(active.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
+ return 'yes';
+}
+export function lizaTotals(games,players,events,from,to){
+ const result=new Map(),seen=new Set();
+ const ensure=id=>{if(!result.has(id))result.set(id,{propinadas:0,recibidas:0,indeterminadas:0});return result.get(id);};
+ for(const game of games){
+  if(seen.has(game.id))continue;seen.add(game.id);
+  if(!game.finished_at||new Date(game.finished_at)<new Date(from)||new Date(game.finished_at)>=new Date(to))continue;
+  const status=classifyLiza(game,events.filter(e=>e.game_id===game.id));
+  if(status==='not_applicable'||status==='no')continue;
+  const unique=new Set();
+  for(const p of players.filter(p=>p.game_id===game.id)){
+   if(!p.member_id||unique.has(p.member_id))continue;unique.add(p.member_id);
+   const total=ensure(p.member_id);
+   if(status==='indeterminate')total.indeterminadas++;
+   else if(p.team===game.winner)total.propinadas++;
+   else if(['L','C'].includes(p.team))total.recibidas++;
   }
-  return result;
+ }
+ return result;
 }
