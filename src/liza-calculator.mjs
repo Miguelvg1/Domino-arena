@@ -16,7 +16,9 @@ export function periodBounds(period,now=new Date()){
 export function classifyLiza(game,events){
  if(game?.status!=='finalizada'||!['L','C'].includes(game?.winner))return 'not_applicable';
  const loser=game.winner==='L'?'C':'L';
- const valid=events.filter(e=>e.voided!==true);\n if(!valid.length)return 'indeterminate';\n const active=valid.filter(e=>e.team===loser);
+ const valid=events.filter(e=>e.voided!==true);
+ if(!valid.length)return 'indeterminate';
+ const active=valid.filter(e=>e.team===loser);
  if(active.some(e=>e.event_type==='normal'&&(e.concept==='dominada'||e.score_concept==='dominada')))return 'no';
  if(valid.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
  return 'yes';
