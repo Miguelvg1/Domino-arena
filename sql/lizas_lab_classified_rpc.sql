@@ -13,7 +13,7 @@ begin
  end if;
  v_concept := case
   when p_event_type='normal' then p_concept
-  when p_event_type in ('dos_carotas','paso_salida_doble') then 'salida_a_dos_caritas'
+  when p_event_type ='dos_carotas' then 'salida_a_dos_caritas'
   else p_event_type::text end;
  if p_event_type='normal' and p_concept is distinct from 'dominada' then
   raise exception 'Las anotaciones manuales requieren concepto dominada. Usa botones especiales para las demás.';
