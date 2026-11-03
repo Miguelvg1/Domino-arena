@@ -22,4 +22,15 @@ const week=periodBounds('semana',new Date('2026-11-03T17:00:00Z'));
 assert.equal(week.from,'2026-11-02T04:00:00.000Z');
 const month=periodBounds('mes',new Date('2026-11-03T17:00:00Z'));
 assert.equal(month.to,'2026-12-01T04:00:00.000Z');
+
+assert.equal(classifyLiza(game,[e('L','normal','dominada',200),e('C','multa',null,30)]),'yes');
+assert.equal(classifyLiza(game,[e('L','normal',null,200),e('C','multa',null,30)]),'indeterminate');
+assert.equal(classifyLiza({...game,status:'en_curso'},[e('L','normal','dominada',200)]),'not_applicable');
+assert.equal(classifyLiza({...game,winner:null},[e('L','normal','dominada',200)]),'not_applicable');
+const undecided=lizaTotals([game],ps,[e('C','normal',null,30)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
+assert.equal(undecided.get('a').indeterminadas,1);
+assert.equal(undecided.get('c').indeterminadas,1);
+const corrected=lizaTotals([game],ps,[{...e('C','normal','dominada',30),voided:true},e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
+assert.equal(corrected.get('a').propinadas,1);
+
 console.log('Liza calculation tests passed');
