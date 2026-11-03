@@ -1,0 +1,13 @@
+import { strict as assert } from 'node:assert';
+import { classifyLiza, lizaTotals } from './liza-calculator.mjs';
+const game={id:'g',status:'finalizada',winner:'L',finished_at:'2026-11-03T17:00:00Z'};
+assert.equal(classifyLiza(game,[]),'yes');
+assert.equal(classifyLiza(game,[{team:'C',event_type:'normal',concept:'dominada',points:30}]),'no');
+assert.equal(classifyLiza(game,[{team:'C',event_type:'multa',points:30}]),'yes');
+assert.equal(classifyLiza(game,[{team:'C',event_type:'normal',points:30}]),'indeterminate');
+const ps=['a','b','c','d'].map((member_id,i)=>({game_id:'g',member_id,team:i<2?'L':'C'}));
+const totals=lizaTotals([game],ps,[], '2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
+assert.equal(totals.get('a').propinadas,1);
+assert.equal(totals.get('d').recibidas,1);
+assert.equal(lizaTotals([game],ps,[],'2026-11-04T00:00:00Z','2026-11-05T00:00:00Z').size,0);
+console.log('Liza calculation tests passed');
