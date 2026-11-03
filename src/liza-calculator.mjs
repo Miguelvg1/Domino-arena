@@ -21,6 +21,14 @@ export function classifyLiza(game,events){
  const active=valid.filter(e=>e.team===loser);
  if(active.some(e=>e.event_type==='normal'&&(e.concept==='dominada'||e.score_concept==='dominada')))return 'no';
  if(valid.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
+ if(game.largos_score!=null&&game.cortos_score!=null){
+  const totals={L:0,C:0};
+  for(const e of valid){
+   if(!Object.hasOwn(totals,e.team)||!Number.isFinite(Number(e.points))||Number(e.points)<=0)return 'indeterminate';
+   totals[e.team]+=Number(e.points);
+  }
+  if(totals.L!==Number(game.largos_score)||totals.C!==Number(game.cortos_score))return 'indeterminate';
+ }
  return 'yes';
 }
 export function lizaTotals(games,players,events,from,to){
