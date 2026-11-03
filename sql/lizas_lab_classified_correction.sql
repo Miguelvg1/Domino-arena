@@ -10,7 +10,7 @@ declare v_concept text;
 begin
  if auth.uid() is null or not public.is_active_club_member() then raise exception 'No autorizado'; end if;
  v_concept:=case when p_new_event_type='normal' then p_concept
-  when p_new_event_type in ('dos_carotas','paso_salida_doble') then 'salida_a_dos_caritas'
+  when p_new_event_type ='dos_carotas' then 'salida_a_dos_caritas'
   else p_new_event_type::text end;
  if p_new_event_type='normal' and p_concept is distinct from 'dominada' then
   raise exception 'Selecciona el concepto dominada para anotación manual';
