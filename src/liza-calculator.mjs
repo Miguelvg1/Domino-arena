@@ -16,9 +16,9 @@ export function periodBounds(period,now=new Date()){
 export function classifyLiza(game,events){
  if(game?.status!=='finalizada'||!['L','C'].includes(game?.winner))return 'not_applicable';
  const loser=game.winner==='L'?'C':'L';
- const active=events.filter(e=>e.team===loser&&e.voided!==true);
+ const valid=events.filter(e=>e.voided!==true);\n if(!valid.length)return 'indeterminate';\n const active=valid.filter(e=>e.team===loser);
  if(active.some(e=>e.event_type==='normal'&&(e.concept==='dominada'||e.score_concept==='dominada')))return 'no';
- if(active.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
+ if(valid.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
  return 'yes';
 }
 export function lizaTotals(games,players,events,from,to){
