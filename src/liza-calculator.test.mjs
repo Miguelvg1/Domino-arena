@@ -33,4 +33,6 @@ assert.equal(undecided.get('c').indeterminadas,1);
 const corrected=lizaTotals([game],ps,[{...e('C','normal','dominada',30),voided:true},e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
 assert.equal(corrected.get('a').propinadas,1);
 
+assert.equal(classifyLiza({...game,largos_score:200,cortos_score:90},[e('L','normal','dominada',200),e('C','multa','multa',30)]),'indeterminate');
+assert.equal(classifyLiza({...game,largos_score:200,cortos_score:30},[e('L','normal','dominada',200),e('C','multa','multa',30)]),'yes');
 console.log('Liza calculation tests passed');
