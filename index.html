@@ -169,14 +169,43 @@ async function joinQueue(){let p=$('#qp').value,t=$('#qt').value;if(!p)return al
 // Liza statistics are read-only and activated only against an isolated lab backend.
 function lizaBounds(period,now=new Date()){let p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santo_Domingo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);let obj=Object.fromEntries(p.map(x=>[x.type,x.value]));let y=+obj.year,m=+obj.month,d=+obj.day,n=Date.UTC(y,m-1,d),start=n,end=n+86400000;if(period==='semana'){start=n-((new Date(n).getUTCDay()+6)%7)*86400000;end=start+7*86400000;}if(period==='mes'){start=Date.UTC(y,m-1,1);end=Date.UTC(y,m,1);}return{from:new Date(start+14400000).toISOString(),to:new Date(end+14400000).toISOString()}}
 async function loadLizaStats(){
- const bounds=['dia','semana','mes'].map(x=>lizaBounds(x));const first=bounds[2].from;
- const g=await sb.from('games').select('id,winner,status,finished_at').eq('status','finalizada').gte('finished_at',first).lt('finished_at',bounds[2].to).limit(1000);
- if(g.error)throw g.error;const games=g.data||[];if(!games.length)return bounds.map(()=>new Map());
- const ids=games.map(x=>x.id),[players,events]=await Promise.all([sb.from('game_players').select('game_id,member_id,team').in('game_id',ids).limit(4000),sb.from('score_events').select('game_id,team,event_type,concept,voided').in('game_id',ids).limit(10000)]);
+ const bounds=['dia','semana','mes'].map(x=>lizaBounds(x));
+ const from=bounds.reduce((a,b)=>a<b.from?a:b.from,bounds[0].from);
+ const to=bounds.reduce((a,b)=>a>b.to?a:b.to,bounds[0].to);
+ const g=await sb.from('games').select('id,winner,status,finished_at,largos_score,cortos_score').eq('status','finalizada').gte('finished_at',from).lt('finished_at',to).limit(1000);
+ if(g.error)throw g.error;const games=(g.data||[]).filter(x=>['L','C'].includes(x.winner));if(!games.length)return bounds.map(()=>new Map());
+ if((g.data||[]).length===1000)throw Error('Demasiadas partidas; paginación necesaria');
+ const ids=games.map(x=>x.id);
+ const [players,events]=await Promise.all([
+  sb.from('game_players').select('game_id,member_id,team').in('game_id',ids).limit(4000),
+  sb.from('score_events').select('game_id,team,event_type,concept,voided').in('game_id',ids).limit(10000)
+ ]);
  if(players.error||events.error)throw players.error||events.error;
- if(games.length===1000||(players.data||[]).length===4000||(events.data||[]).length===10000)throw Error('Resultados incompletos; paginación necesaria');
- const ev=new Map();for(const e of events.data||[]){if(!ev.has(e.game_id))ev.set(e.game_id,[]);ev.get(e.game_id).push(e)}
- return bounds.map(b=>{const out=new Map();for(const game of games){if(game.finished_at<b.from||game.finished_at>=b.to)continue;const loser=game.winner==='L'?'C':'L';const rows=(ev.get(game.id)||[]).filter(e=>e.team===loser&&!e.voided);if(rows.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;const unknown=rows.some(e=>e.event_type==='normal'&&!e.concept);for(const p of (players.data||[]).filter(p=>p.game_id===game.id)){let a=out.get(p.member_id)||{propinadas:0,recibidas:0,indeterminadas:0};if(unknown)a.indeterminadas++;else if(p.team===game.winner)a.propinadas++;else a.recibidas++;out.set(p.member_id,a)}}return out});
+ if((players.data||[]).length===4000||(events.data||[]).length===10000)throw Error('Resultados incompletos; paginación necesaria');
+ const ev=new Map(),gp=new Map();
+ for(const e of events.data||[]){if(!ev.has(e.game_id))ev.set(e.game_id,[]);ev.get(e.game_id).push(e)}
+ for(const p of players.data||[]){if(!gp.has(p.game_id))gp.set(p.game_id,[]);gp.get(p.game_id).push(p)}
+ return bounds.map(b=>{
+  const out=new Map();
+  for(const game of games){
+   if(game.finished_at<b.from||game.finished_at>=b.to)continue;
+   const loser=game.winner==='L'?'C':'L',all=(ev.get(game.id)||[]).filter(e=>!e.voided);
+   const losing=all.filter(e=>e.team===loser);
+   if(losing.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;
+   // Without a full classified history, a liza cannot be certified.
+   const unknown=!all.length||all.some(e=>e.event_type==='normal'&&!e.concept);
+   const members=gp.get(game.id)||[];
+   if(members.length!==4||new Set(members.map(p=>p.member_id)).size!==4)continue;
+   for(const p of members){
+    const a=out.get(p.member_id)||{propinadas:0,recibidas:0,indeterminadas:0};
+    if(unknown)a.indeterminadas++;
+    else if(p.team===game.winner)a.propinadas++;
+    else if(p.team===loser)a.recibidas++;
+    out.set(p.member_id,a);
+   }
+  }
+  return out;
+ });
 }
 async function playerStats(){let now=new Date(),today=new Date(now),day=now.getDay()||7,week=new Date(now),month=new Date(now.getFullYear(),now.getMonth(),1);today.setHours(0,0,0,0);week.setDate(now.getDate()-day+1);week.setHours(0,0,0,0);let[d,w,m,members,net]=await Promise.all([sb.rpc('titanes_ranking_v2_compat',{p_from:today.toISOString(),p_to:now.toISOString(),p_min_games:0}),sb.rpc('titanes_ranking_v2_compat',{p_from:week.toISOString(),p_to:now.toISOString(),p_min_games:0}),sb.rpc('titanes_ranking_v2_compat',{p_from:month.toISOString(),p_to:now.toISOString(),p_min_games:0}),sb.from('members').select('id,full_name,nickname,photo_url,login_username').eq('active',true).is('deleted_at',null).order('nickname'),sb.from('player_net_points_v1').select('member_id,full_name,nickname,photo_url,gross_points,penalty_points,net_points,chivos,pases_con_ficha,multas').order('net_points',{ascending:false}).order('gross_points',{ascending:false})]);let dailyMaps=await dailyPlayerResults().catch(e=>{console.warn('Estadísticas diarias',e);return null});let lizaMaps=LIZA_LAB_ENABLED?await loadLizaStats().catch(e=>{console.warn('Lizas',e);return null}):null;let netRows=net.data||[],maps=[d,w,m].map(r=>new Map((r.data||[]).map(x=>[x.member_id,x]))),val=(x,k)=>Number(x?.[k]||0),cards=(members.data||[]).map(member=>{let a=maps.map(x=>x.get(member.id)),daily=dailyMaps?dailyMaps.map(x=>x.get(member.id)):null,period=(x,label)=>`<div class="statsPeriod"><small>${label}</small><b>${val(x,'games_won')} G · ${val(x,'games_lost')} P</b><small>${val(x,'games_played')} partidas · ${val(x,'total_points').toLocaleString()} puntos</small></div>`;return`<article class="statsPlayer" data-stats-name="${esc(`${member.nickname||''} ${member.full_name||''} ${member.login_username||''}`.toLowerCase())}"><div class="row"><div class="grow"><b>${esc(nm(member))}</b><div class="small muted">${esc(member.full_name||'Miembro del club')}${member.login_username?' · @'+esc(member.login_username):''}</div></div><span class="badge">${val(a[0],'games_played')} PJ hoy</span></div><div class="statsPeriods">${daily?period(daily[0],'AYER')+period(daily[1],'HOY'):'<div class="muted">Datos diarios no disponibles</div>'}${period(a[1],'SEMANA')}${period(a[2],'MES')}</div>${lizaMaps?`<div class="statsPeriods">${['HOY','SEMANA','MES'].map((label,i)=>{let l=lizaMaps[i].get(member.id)||{};return `<div class="statsPeriod"><small>🏆 LIZAS ${label}</small><b>${l.propinadas||0} propinadas · ${l.recibidas||0} recibidas</b>${l.indeterminadas?`<small>${l.indeterminadas} por verificar</small>`:''}</div>`}).join('')}</div>`:''}</article>`}).join('');window.filterStats=q=>{q=q.toLowerCase();document.querySelectorAll('[data-stats-name]').forEach(x=>x.classList.toggle('hidden',!x.dataset.statsName.includes(q)))};return`<div class="hero"><div class="badge">📈 ESTADÍSTICAS DEL CLUB</div><h1>El rendimiento de todos</h1><p>Ganadas, perdidas, partidas jugadas y puntos de hoy, la semana y el mes.</p></div>${pointsRankingPanel(netRows)}<input class="field" placeholder="🔎 Buscar por nombre, apodo o usuario" oninput="window.filterStats(this.value)"><div class="card"><div class="row"><h2 class="grow">Todos los jugadores</h2><span class="statPill"><span class="liveSpark"></span>Actualizado ahora</span></div>${cards||'<p class="muted">Todavía no hay miembros con estadísticas.</p>'}</div>`}
 function profile(){
