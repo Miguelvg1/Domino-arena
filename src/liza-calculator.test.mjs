@@ -35,4 +35,11 @@ assert.equal(corrected.get('a').propinadas,1);
 
 assert.equal(classifyLiza({...game,largos_score:200,cortos_score:90},[e('L','normal','dominada',200),e('C','multa','multa',30)]),'indeterminate');
 assert.equal(classifyLiza({...game,largos_score:200,cortos_score:30},[e('L','normal','dominada',200),e('C','multa','multa',30)]),'yes');
+const incompleteDominada={...game,largos_score:200,cortos_score:30};
+assert.equal(classifyLiza(incompleteDominada,[e('L','normal','dominada',190),e('C','normal','dominada',30)]),'indeterminate');
+assert.equal(classifyLiza(incompleteDominada,[e('L','normal','dominada',200),e('C','normal','dominada',30)]),'no');
+const invalidTeam=[...ps.slice(0,3),{...ps[3],team:'L'}];
+assert.equal(lizaTotals([game],invalidTeam,[e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z').size,0);
+const duplicatePlayer=[...ps.slice(0,3),{...ps[3],member_id:'a'}];
+assert.equal(lizaTotals([game],duplicatePlayer,[e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z').size,0);
 console.log('Liza calculation tests passed');
