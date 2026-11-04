@@ -15,8 +15,8 @@ begin
   when p_event_type='normal' then p_concept
   when p_event_type ='dos_carotas' then 'salida_a_dos_caritas'
   else p_event_type::text end;
- if p_event_type='normal' and p_concept is distinct from 'dominada' then
-  raise exception 'Las anotaciones manuales requieren concepto dominada. Usa botones especiales para las demás.';
+ if p_event_type='normal' and p_concept not in ('dominada','salida') or p_concept is null then
+  raise exception 'Las anotaciones manuales requieren concepto dominada o salida.';
  end if;
  if p_event_type<>'normal' and p_concept is not null and p_concept<>v_concept then
   raise exception 'Concepto incompatible con el tipo de jugada';
