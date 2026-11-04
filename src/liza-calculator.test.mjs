@@ -42,4 +42,25 @@ const invalidTeam=[...ps.slice(0,3),{...ps[3],team:'L'}];
 assert.equal(lizaTotals([game],invalidTeam,[e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z').size,0);
 const duplicatePlayer=[...ps.slice(0,3),{...ps[3],member_id:'a'}];
 assert.equal(lizaTotals([game],duplicatePlayer,[e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z').size,0);
+// Integration-like liza statistics: shutout with penalties, non-shutout, and indeterminate history.
+const scenarios=[
+ {...game,id:'liza-1',largos_score:200,cortos_score:30},
+ {...game,id:'no-liza',largos_score:200,cortos_score:30},
+ {...game,id:'unknown',largos_score:200,cortos_score:30}
+];
+const scenarioPlayers=scenarios.flatMap(g=>ps.map(p=>({...p,game_id:g.id})));
+const scenarioEvents=[
+ {...e('L','normal','dominada',140),game_id:'liza-1'},
+ {...e('L','dos_carotas','salida_a_dos_caritas',60),game_id:'liza-1'},
+ {...e('C','multa','multa',30),game_id:'liza-1'},
+ {...e('L','normal','dominada',200),game_id:'no-liza'},
+ {...e('C','normal','dominada',30),game_id:'no-liza'},
+ {...e('L','normal','dominada',200),game_id:'unknown'},
+ {...e('C','normal',null,30),game_id:'unknown'}
+];
+const scenarioTotals=lizaTotals(scenarios,scenarioPlayers,scenarioEvents,'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
+assert.deepEqual(scenarioTotals.get('a'),{propinadas:1,recibidas:0,indeterminadas:1});
+assert.deepEqual(scenarioTotals.get('b'),{propinadas:1,recibidas:0,indeterminadas:1});
+assert.deepEqual(scenarioTotals.get('c'),{propinadas:0,recibidas:1,indeterminadas:1});
+assert.deepEqual(scenarioTotals.get('d'),{propinadas:0,recibidas:1,indeterminadas:1});
 console.log('Liza calculation tests passed');
