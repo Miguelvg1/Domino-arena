@@ -19,8 +19,7 @@ export function classifyLiza(game,events){
  const valid=events.filter(e=>e.voided!==true);
  if(!valid.length)return 'indeterminate';
  const active=valid.filter(e=>e.team===loser);
- if(active.some(e=>e.event_type==='normal'&&(e.concept==='dominada'||e.score_concept==='dominada')))return 'no';
- if(valid.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
+
  if(game.largos_score!=null&&game.cortos_score!=null){
   const totals={L:0,C:0};
   for(const e of valid){
@@ -29,6 +28,8 @@ export function classifyLiza(game,events){
   }
   if(totals.L!==Number(game.largos_score)||totals.C!==Number(game.cortos_score))return 'indeterminate';
  }
+ if(valid.some(e=>e.event_type==='normal'&&!e.concept&&!e.score_concept))return 'indeterminate';
+ if(active.some(e=>e.event_type==='normal'&&(e.concept==='dominada'||e.score_concept==='dominada')))return 'no';
  return 'yes';
 }
 export function lizaTotals(games,players,events,from,to){
@@ -39,8 +40,10 @@ export function lizaTotals(games,players,events,from,to){
   if(!game.finished_at||new Date(game.finished_at)<new Date(from)||new Date(game.finished_at)>=new Date(to))continue;
   const status=classifyLiza(game,events.filter(e=>e.game_id===game.id));
   if(status==='not_applicable'||status==='no')continue;
+  const gamePlayers=players.filter(p=>p.game_id===game.id);
+  if(gamePlayers.length!==4||new Set(gamePlayers.map(p=>p.member_id)).size!==4||gamePlayers.filter(p=>p.team==='L').length!==2||gamePlayers.filter(p=>p.team==='C').length!==2)continue;
   const unique=new Set();
-  for(const p of players.filter(p=>p.game_id===game.id)){
+  for(const p of gamePlayers){
    if(!p.member_id||unique.has(p.member_id))continue;unique.add(p.member_id);
    const total=ensure(p.member_id);
    if(status==='indeterminate')total.indeterminadas++;
