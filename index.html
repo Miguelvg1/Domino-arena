@@ -202,7 +202,7 @@ async function loadLizaStats(){
    const unknown=!all.length||all.some(e=>e.event_type==='normal'&&!e.concept)||!reconciled;
    if(!unknown&&losing.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;
    const members=gp.get(game.id)||[];
-   if(members.length!==4||new Set(members.map(p=>p.member_id)).size!==4)continue;
+   if(members.length!==4||new Set(members.map(p=>p.member_id)).size!==4||members.filter(p=>p.team==='L').length!==2||members.filter(p=>p.team==='C').length!==2)continue;
    for(const p of members){
     const a=out.get(p.member_id)||{propinadas:0,recibidas:0,indeterminadas:0};
     if(unknown)a.indeterminadas++;
