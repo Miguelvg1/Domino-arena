@@ -12,8 +12,8 @@ begin
  v_concept:=case when p_new_event_type='normal' then p_concept
   when p_new_event_type ='dos_carotas' then 'salida_a_dos_caritas'
   else p_new_event_type::text end;
- if p_new_event_type='normal' and p_concept is distinct from 'dominada' then
-  raise exception 'Selecciona el concepto dominada para anotación manual';
+ if p_new_event_type='normal' and p_concept not in ('dominada','salida') or p_concept is null then
+  raise exception 'Selecciona dominada o salida para anotación manual';
  end if;
  if p_new_event_type<>'normal' and p_concept is not null and p_concept<>v_concept then
   raise exception 'Concepto incompatible';
