@@ -191,8 +191,7 @@ async function loadLizaStats(){
    if(game.finished_at<b.from||game.finished_at>=b.to)continue;
    const loser=game.winner==='L'?'C':'L',all=(ev.get(game.id)||[]).filter(e=>!e.voided);
    const losing=all.filter(e=>e.team===loser);
-   if(losing.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;
-   // Without a full classified history, a liza cannot be certified.
+   // A complete, reconciled event history is required before a liza is certified.
    const totals={L:0,C:0};
    const validPoints=all.every(e=>{
     const pts=Number(e.points);
@@ -201,6 +200,7 @@ async function loadLizaStats(){
    });
    const reconciled=validPoints&&totals.L===Number(game.largos_score)&&totals.C===Number(game.cortos_score);
    const unknown=!all.length||all.some(e=>e.event_type==='normal'&&!e.concept)||!reconciled;
+   if(!unknown&&losing.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;
    const members=gp.get(game.id)||[];
    if(members.length!==4||new Set(members.map(p=>p.member_id)).size!==4)continue;
    for(const p of members){
