@@ -178,7 +178,7 @@ async function loadLizaStats(){
  const ids=games.map(x=>x.id);
  const [players,events]=await Promise.all([
   sb.from('game_players').select('game_id,member_id,team').in('game_id',ids).limit(4000),
-  sb.from('score_events').select('game_id,team,event_type,concept,voided').in('game_id',ids).limit(10000)
+  sb.from('score_events').select('game_id,team,event_type,concept,voided,points').in('game_id',ids).limit(10000)
  ]);
  if(players.error||events.error)throw players.error||events.error;
  if((players.data||[]).length===4000||(events.data||[]).length===10000)throw Error('Resultados incompletos; paginación necesaria');
@@ -193,7 +193,14 @@ async function loadLizaStats(){
    const losing=all.filter(e=>e.team===loser);
    if(losing.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;
    // Without a full classified history, a liza cannot be certified.
-   const unknown=!all.length||all.some(e=>e.event_type==='normal'&&!e.concept);
+   const totals={L:0,C:0};
+   const validPoints=all.every(e=>{
+    const pts=Number(e.points);
+    if(!Object.hasOwn(totals,e.team)||!Number.isFinite(pts)||pts<=0)return false;
+    totals[e.team]+=pts;return true;
+   });
+   const reconciled=validPoints&&totals.L===Number(game.largos_score)&&totals.C===Number(game.cortos_score);
+   const unknown=!all.length||all.some(e=>e.event_type==='normal'&&!e.concept)||!reconciled;
    const members=gp.get(game.id)||[];
    if(members.length!==4||new Set(members.map(p=>p.member_id)).size!==4)continue;
    for(const p of members){
