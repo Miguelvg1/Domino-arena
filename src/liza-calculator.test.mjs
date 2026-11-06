@@ -63,4 +63,8 @@ assert.deepEqual(scenarioTotals.get('a'),{propinadas:1,recibidas:0,indeterminada
 assert.deepEqual(scenarioTotals.get('b'),{propinadas:1,recibidas:0,indeterminadas:1});
 assert.deepEqual(scenarioTotals.get('c'),{propinadas:0,recibidas:1,indeterminadas:1});
 assert.deepEqual(scenarioTotals.get('d'),{propinadas:0,recibidas:1,indeterminadas:1});
+// Completed games with invalid final scores must never be certified as lizas.
+assert.equal(classifyLiza({...game,largos_score:190,cortos_score:30},[e('L','normal','dominada',190),e('C','multa','multa',30)]),'indeterminate');
+assert.equal(classifyLiza({...game,largos_score:200,cortos_score:200},[e('L','normal','dominada',200),e('C','multa','multa',200)]),'indeterminate');
+assert.equal(classifyLiza({...game,largos_score:200,cortos_score:-30},[e('L','normal','dominada',200),e('C','multa','multa',-30)]),'indeterminate');
 console.log('Liza calculation tests passed');
