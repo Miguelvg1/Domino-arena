@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { classifyLiza, lizaTotals } from './liza-calculator.mjs';
 const players=['A','B','C','D'].map((member_id,i)=>({game_id:'sim-1',member_id,team:i<2?'L':'C'}));
-const game={id:'sim-1',status:'en_curso',winner:null,finished_at:null};
+const game={id:'sim-1',status:'en_curso',winner:null,finished_at:null,largos_score:200,cortos_score:120};
 const events=[];
 const add=(team,event_type,concept,points)=>events.push({game_id:game.id,team,event_type,concept,points,voided:false});
 const finish=()=>{game.status='finalizada';game.winner='L';game.finished_at='2026-11-03T17:00:00Z'};
