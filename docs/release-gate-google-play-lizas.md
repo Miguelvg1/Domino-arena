@@ -2,7 +2,7 @@
 
 ## Estado
 - Rama candidata: `feature/lizas-y-conceptos-30-60`. NO fusionar ni desplegar contra producción antes de la migración y pruebas.
-- `index.html` tiene `LIZA_LAB_ENABLED=true` pero apunta a producción. **Es una activación pendiente, NO lista para desplegar sin migración.**
+- `index.html` tiene `LIZA_LAB_ENABLED=false` y apunta a producción. **La clasificación de lizas está desactivada por seguridad; no habilitar ni desplegar el cambio sin migración y pruebas.**
 - Migración candidata: `sql/lizas_production_migration_candidate.sql`; prueba SQL transaccional en laboratorio con ROLLBACK pasó.
 - Auditoría de producción de solo lectura: 864/864 partidas finalizadas conciliadas, 864/864 con 4 jugadores (2+2); 864/864 con anotaciones normales históricas sin concepto. No inventar lizas antiguas.
 
