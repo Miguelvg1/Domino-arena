@@ -8,6 +8,8 @@ const dominada=e('C','normal','dominada',30);
 const withPenalty={...base,cortos_score:30};
 assert.equal(classifyLiza(base,[]),'indeterminate');
 assert.equal(classifyLiza(base,[win]),'yes');
+assert.equal(classifyLiza(base,[{...win,event_type:'unknown'}]),'indeterminate');
+assert.equal(classifyLiza(base,[{...win,points:null}]),'indeterminate');
 assert.equal(classifyLiza({...base,largos_score:null},[win]),'indeterminate');
 assert.equal(classifyLiza({...base,cortos_score:null},[win]),'indeterminate');
 assert.equal(classifyLiza(withPenalty,[win,penalty]),'yes');
