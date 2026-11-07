@@ -21,7 +21,8 @@ export function classifyLiza(game,events){
  const active=valid.filter(e=>e.team===loser);
 
  // A liza requires a valid 200-point win; never certify an unfinished or tied scoreboard.
- if(game.largos_score!=null&&game.cortos_score!=null){
+ if(game.largos_score==null||game.cortos_score==null)return 'indeterminate';
+ {
   const winnerScore=Number(game.winner==='L'?game.largos_score:game.cortos_score);
   const loserScore=Number(game.winner==='L'?game.cortos_score:game.largos_score);
   if(!Number.isFinite(winnerScore)||!Number.isFinite(loserScore)||winnerScore<200||loserScore>=200||loserScore<0)return 'indeterminate';
