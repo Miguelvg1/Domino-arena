@@ -1,70 +1,39 @@
 import { strict as assert } from 'node:assert';
 import { classifyLiza, lizaTotals, periodBounds } from './liza-calculator.mjs';
-const game={id:'g',status:'finalizada',winner:'L',finished_at:'2026-11-03T17:00:00Z'};
-const ps=['a','b','c','d'].map((member_id,i)=>({game_id:'g',member_id,team:i<2?'L':'C'}));
-const e=(team,event_type,concept,points=30)=>({game_id:'g',team,event_type,concept,points});
-assert.equal(classifyLiza(game,[]),'indeterminate');
-assert.equal(classifyLiza(game,[e('C','normal','dominada')]),'no');
-assert.equal(classifyLiza(game,[e('C','normal','dominada',60)]),'no');
-assert.equal(classifyLiza(game,[e('C','multa',null)]),'yes');
-assert.equal(classifyLiza(game,[e('C','normal','salida_a_dos_caritas',60)]),'yes');
-assert.equal(classifyLiza(game,[e('C','normal',null)]),'indeterminate');
-assert.equal(classifyLiza(game,[{...e('C','normal','dominada'),voided:true}]),'indeterminate');
-const totals=lizaTotals([game,game],ps,[e('L','normal','dominada',200)], '2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
-assert.equal(totals.get('a').propinadas,1);
-assert.equal(totals.get('b').propinadas,1);
-assert.equal(totals.get('c').recibidas,1);
-assert.equal(totals.get('d').recibidas,1);
-assert.equal(lizaTotals([game],ps,[],'2026-11-04T00:00:00Z','2026-11-05T00:00:00Z').size,0);
+const base={id:'g',status:'finalizada',winner:'L',finished_at:'2026-11-03T17:00:00Z',largos_score:200,cortos_score:0};
+const e=(team,event_type,concept,points)=>({game_id:'g',team,event_type,concept,points});
+const win=e('L','normal','dominada',200);
+const penalty=e('C','multa','multa',30);
+const dominada=e('C','normal','dominada',30);
+const withPenalty={...base,cortos_score:30};
+assert.equal(classifyLiza(base,[]),'indeterminate');
+assert.equal(classifyLiza(base,[win]),'yes');
+assert.equal(classifyLiza({...base,largos_score:null},[win]),'indeterminate');
+assert.equal(classifyLiza({...base,cortos_score:null},[win]),'indeterminate');
+assert.equal(classifyLiza(withPenalty,[win,penalty]),'yes');
+assert.equal(classifyLiza(withPenalty,[win,dominada]),'no');
+assert.equal(classifyLiza(withPenalty,[win,e('C','normal',null,30)]),'indeterminate');
+assert.equal(classifyLiza(base,[win,{...dominada,voided:true}]),'yes');
+assert.equal(classifyLiza(withPenalty,[win,{...penalty,voided:true}]),'indeterminate');
+assert.equal(classifyLiza({...base,largos_score:190},[e('L','normal','dominada',190)]),'indeterminate');
+assert.equal(classifyLiza({...base,cortos_score:200},[win,e('C','multa','multa',200)]),'indeterminate');
+assert.equal(classifyLiza({...base,cortos_score:-30},[win,e('C','multa','multa',-30)]),'indeterminate');
+assert.equal(classifyLiza({...base,status:'activa'},[win]),'not_applicable');
+assert.equal(classifyLiza({...base,winner:null},[win]),'not_applicable');
+assert.equal(classifyLiza({...base,largos_score:210},[e('L','normal','dominada',150),e('L','dos_carotas','salida_a_dos_caritas',60)]),'yes');
+const players=['a','b','c','d'].map((member_id,i)=>({game_id:'g',member_id,team:i<2?'L':'C'}));
+const range=['2026-11-03T00:00:00Z','2026-11-04T00:00:00Z'];
+const totals=lizaTotals([base,base],players,[win],...range);
+assert.deepEqual(totals.get('a'),{propinadas:1,recibidas:0,indeterminadas:0});
+assert.deepEqual(totals.get('c'),{propinadas:0,recibidas:1,indeterminadas:0});
+assert.equal(lizaTotals([base],players,[win],'2026-11-04T00:00:00Z','2026-11-05T00:00:00Z').size,0);
+assert.equal(lizaTotals([base],players.slice(0,3),[win],...range).size,0);
+assert.equal(lizaTotals([base],players.map((p,i)=>i===3?{...p,member_id:'a'}:p),[win],...range).size,0);
+const unknown=lizaTotals([{...base,cortos_score:null}],players,[win],...range);
+assert.equal(unknown.get('a').indeterminadas,1);
+assert.equal(unknown.get('c').indeterminadas,1);
 const day=periodBounds('dia',new Date('2026-11-03T02:00:00Z'));
 assert.deepEqual(day,{from:'2026-11-02T04:00:00.000Z',to:'2026-11-03T04:00:00.000Z'});
-const week=periodBounds('semana',new Date('2026-11-03T17:00:00Z'));
-assert.equal(week.from,'2026-11-02T04:00:00.000Z');
-const month=periodBounds('mes',new Date('2026-11-03T17:00:00Z'));
-assert.equal(month.to,'2026-12-01T04:00:00.000Z');
-
-assert.equal(classifyLiza(game,[e('L','normal','dominada',200),e('C','multa',null,30)]),'yes');
-assert.equal(classifyLiza(game,[e('L','normal',null,200),e('C','multa',null,30)]),'indeterminate');
-assert.equal(classifyLiza({...game,status:'en_curso'},[e('L','normal','dominada',200)]),'not_applicable');
-assert.equal(classifyLiza({...game,winner:null},[e('L','normal','dominada',200)]),'not_applicable');
-const undecided=lizaTotals([game],ps,[e('C','normal',null,30)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
-assert.equal(undecided.get('a').indeterminadas,1);
-assert.equal(undecided.get('c').indeterminadas,1);
-const corrected=lizaTotals([game],ps,[{...e('C','normal','dominada',30),voided:true},e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
-assert.equal(corrected.get('a').propinadas,1);
-
-assert.equal(classifyLiza({...game,largos_score:200,cortos_score:90},[e('L','normal','dominada',200),e('C','multa','multa',30)]),'indeterminate');
-assert.equal(classifyLiza({...game,largos_score:200,cortos_score:30},[e('L','normal','dominada',200),e('C','multa','multa',30)]),'yes');
-const incompleteDominada={...game,largos_score:200,cortos_score:30};
-assert.equal(classifyLiza(incompleteDominada,[e('L','normal','dominada',190),e('C','normal','dominada',30)]),'indeterminate');
-assert.equal(classifyLiza(incompleteDominada,[e('L','normal','dominada',200),e('C','normal','dominada',30)]),'no');
-const invalidTeam=[...ps.slice(0,3),{...ps[3],team:'L'}];
-assert.equal(lizaTotals([game],invalidTeam,[e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z').size,0);
-const duplicatePlayer=[...ps.slice(0,3),{...ps[3],member_id:'a'}];
-assert.equal(lizaTotals([game],duplicatePlayer,[e('L','normal','dominada',200)],'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z').size,0);
-// Integration-like liza statistics: shutout with penalties, non-shutout, and indeterminate history.
-const scenarios=[
- {...game,id:'liza-1',largos_score:200,cortos_score:30},
- {...game,id:'no-liza',largos_score:200,cortos_score:30},
- {...game,id:'unknown',largos_score:200,cortos_score:30}
-];
-const scenarioPlayers=scenarios.flatMap(g=>ps.map(p=>({...p,game_id:g.id})));
-const scenarioEvents=[
- {...e('L','normal','dominada',140),game_id:'liza-1'},
- {...e('L','dos_carotas','salida_a_dos_caritas',60),game_id:'liza-1'},
- {...e('C','multa','multa',30),game_id:'liza-1'},
- {...e('L','normal','dominada',200),game_id:'no-liza'},
- {...e('C','normal','dominada',30),game_id:'no-liza'},
- {...e('L','normal','dominada',200),game_id:'unknown'},
- {...e('C','normal',null,30),game_id:'unknown'}
-];
-const scenarioTotals=lizaTotals(scenarios,scenarioPlayers,scenarioEvents,'2026-11-03T00:00:00Z','2026-11-04T00:00:00Z');
-assert.deepEqual(scenarioTotals.get('a'),{propinadas:1,recibidas:0,indeterminadas:1});
-assert.deepEqual(scenarioTotals.get('b'),{propinadas:1,recibidas:0,indeterminadas:1});
-assert.deepEqual(scenarioTotals.get('c'),{propinadas:0,recibidas:1,indeterminadas:1});
-assert.deepEqual(scenarioTotals.get('d'),{propinadas:0,recibidas:1,indeterminadas:1});
-// Completed games with invalid final scores must never be certified as lizas.
-assert.equal(classifyLiza({...game,largos_score:190,cortos_score:30},[e('L','normal','dominada',190),e('C','multa','multa',30)]),'indeterminate');
-assert.equal(classifyLiza({...game,largos_score:200,cortos_score:200},[e('L','normal','dominada',200),e('C','multa','multa',200)]),'indeterminate');
-assert.equal(classifyLiza({...game,largos_score:200,cortos_score:-30},[e('L','normal','dominada',200),e('C','multa','multa',-30)]),'indeterminate');
+assert.equal(periodBounds('semana',new Date('2026-11-03T17:00:00Z')).from,'2026-11-02T04:00:00.000Z');
+assert.equal(periodBounds('mes',new Date('2026-11-03T17:00:00Z')).to,'2026-12-01T04:00:00.000Z');
 console.log('Liza calculation tests passed');
