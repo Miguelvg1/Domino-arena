@@ -27,8 +27,10 @@ export function classifyLiza(game,events){
   const loserScore=Number(game.winner==='L'?game.cortos_score:game.largos_score);
   if(!Number.isFinite(winnerScore)||!Number.isFinite(loserScore)||winnerScore<200||loserScore>=200||loserScore<0)return 'indeterminate';
   const totals={L:0,C:0};
+  const knownTypes=new Set(['normal','multa','capicua','paso_corrido','chivo','pase_con_ficha','paso_salida_doble','dos_carotas']);
   for(const e of valid){
-   if(!Object.hasOwn(totals,e.team)||!Number.isFinite(Number(e.points))||Number(e.points)<=0)return 'indeterminate';
+   if(!knownTypes.has(e.event_type))return 'indeterminate';
+   if(!Object.hasOwn(totals,e.team)||e.points==null||!Number.isFinite(Number(e.points))||Number(e.points)<=0)return 'indeterminate';
    totals[e.team]+=Number(e.points);
   }
   if(totals.L!==Number(game.largos_score)||totals.C!==Number(game.cortos_score))return 'indeterminate';
