@@ -19,3 +19,6 @@ jobs:
         run: node src/liza-calculator.test.mjs
       - name: Match simulation tests
         run: node src/liza-match-simulation.test.mjs
+
+      - name: UI scoring smoke checks
+        run: node src/liza-ui-smoke.test.mjs
