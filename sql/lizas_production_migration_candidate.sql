@@ -6,7 +6,8 @@ set local lock_timeout='5s';
 set local statement_timeout='60s';
 -- Fail closed if prerequisite scoring functions are absent.
 do $$ begin
- if to_regprocedure('public.add_score_event(uuid,public.team_side,public.score_event_type,integer,uuid,uuid)') is null
+ if to_regprocedure('public.is_active_club_member()') is null
+ or to_regprocedure('public.add_score_event(uuid,public.team_side,public.score_event_type,integer,uuid,uuid)') is null
  or to_regprocedure('public.correct_score_event_v2(uuid,public.team_side,public.score_event_type,integer,uuid,uuid,text)') is null
  then raise exception 'Scoring RPC signature mismatch: stop migration'; end if;
 end $$;
