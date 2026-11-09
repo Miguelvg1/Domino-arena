@@ -14,6 +14,8 @@ const required=[
  ['UI actions catch errors',/try\{await action\(b\.dataset\.a,b\)\}catch\(err\)/],
  ['in-app correction prompt',/function titanPrompt\(message,initial=/],
  ['correction uses in-app prompt',/await titanPrompt\('Equipo que debe recibir los puntos/],
+ ['correction uses in-app confirmation',/const confirmation=await titanPrompt\(`/],
+ ['correction confirmation requires explicit word',/confirmation\.trim\(\)\.toUpperCase\(\)!=='CONFIRMAR'/],
  ['prevents duplicate score edits',/if\(b\.dataset\.busy==='1'\)return/],
  ['restores score edit button',/finally\{if\(scoreEdit\)/]
 ];
