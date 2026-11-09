@@ -7,6 +7,8 @@ const required=[
  ['correction button rendered',/data-a="correctScoreV2"/],
  ['correction action routed',/if\(a==='correctScoreV2'\)return correctScoreV2\(b\)/],
  ['void action routed',/if\(a==='voidScore'\)return voidScore/],
+ ['void action implemented',/async function voidScore\(id,points\)/],
+ ['void RPC uses audited backend',/sb\.rpc\('void_score_event',\{p_event_id:id,p_reason:/],
  ['correction RPC implemented',/correct_score_event_classified/],
  ['save RPC implemented',/add_score_event_classified/],
  ['UI actions catch errors',/try\{await action\(b\.dataset\.a,b\)\}catch\(err\)/],
