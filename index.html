@@ -174,9 +174,15 @@ async function loadLizaStats(){
  const bounds=['dia','semana','mes'].map(x=>lizaBounds(x));
  const from=bounds.reduce((a,b)=>a<b.from?a:b.from,bounds[0].from);
  const to=bounds.reduce((a,b)=>a>b.to?a:b.to,bounds[0].to);
- const g=await sb.from('games').select('id,winner,status,finished_at,largos_score,cortos_score').eq('status','finalizada').gte('finished_at',from).lt('finished_at',to).limit(1000);
- if(g.error)throw g.error;const games=(g.data||[]).filter(x=>['L','C'].includes(x.winner));if(!games.length)return bounds.map(()=>new Map());
- if((g.data||[]).length===1000)throw Error('Demasiadas partidas; paginación necesaria');
+ // Paginate finished games: busy months can exceed the default Supabase row cap.
+ const games=[];const gamePageSize=500;
+ for(let offset=0;;offset+=gamePageSize){
+  const {data,error}=await sb.from('games').select('id,winner,status,finished_at,largos_score,cortos_score').eq('status','finalizada').gte('finished_at',from).lt('finished_at',to).order('finished_at',{ascending:true}).order('id',{ascending:true}).range(offset,offset+gamePageSize-1);
+  if(error)throw error;
+  games.push(...(data||[]).filter(x=>['L','C'].includes(x.winner)));
+  if((data||[]).length<gamePageSize)break;
+ }
+ if(!games.length)return bounds.map(()=>new Map());
  const ids=games.map(x=>x.id);
  // Fetch all pages explicitly: Supabase may cap each response at 1,000 rows
  // even when a larger .limit() is requested. Never certify partial histories.
