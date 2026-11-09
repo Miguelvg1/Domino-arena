@@ -79,8 +79,8 @@ jobs:
 
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 4')
-          s = s.replace('versionName "1.0"', 'versionName "1.0.3"')
+          s = s.replace('versionCode 1', 'versionCode 5')
+          s = s.replace('versionName "1.0"', 'versionName "1.0.4"')
           p.write_text(s)
           PY
 
@@ -126,12 +126,12 @@ jobs:
           test -f "$AAB"
           jarsigner -verify "$AAB"
           mkdir -p release
-          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.3.aab"
+          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.4.aab"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Titanes-Domino-Alpha-AAB-API36-v1.0.3
-          path: release/Titanes-Domino-Alpha-1.0.3.aab
+          name: Titanes-Domino-Alpha-AAB-API36-v1.0.4
+          path: release/Titanes-Domino-Alpha-1.0.4.aab
           if-no-files-found: error
           retention-days: 30
