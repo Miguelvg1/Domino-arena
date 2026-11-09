@@ -178,15 +178,28 @@ async function loadLizaStats(){
  if(g.error)throw g.error;const games=(g.data||[]).filter(x=>['L','C'].includes(x.winner));if(!games.length)return bounds.map(()=>new Map());
  if((g.data||[]).length===1000)throw Error('Demasiadas partidas; paginación necesaria');
  const ids=games.map(x=>x.id);
+ // Fetch all pages explicitly: Supabase may cap each response at 1,000 rows
+ // even when a larger .limit() is requested. Never certify partial histories.
+ async function fetchLizaRows(table,columns,gameIds){
+  const rows=[],pageSize=500,chunkSize=40;
+  for(let i=0;i<gameIds.length;i+=chunkSize){
+   const chunk=gameIds.slice(i,i+chunkSize);
+   for(let offset=0;;offset+=pageSize){
+    const {data,error}=await sb.from(table).select(columns).in('game_id',chunk).order('game_id',{ascending:true}).range(offset,offset+pageSize-1);
+    if(error)throw error;
+    rows.push(...(data||[]));
+    if((data||[]).length<pageSize)break;
+   }
+  }
+  return rows;
+ }
  const [players,events]=await Promise.all([
-  sb.from('game_players').select('game_id,member_id,team').in('game_id',ids).limit(4000),
-  sb.from('score_events').select('game_id,team,event_type,concept,voided,points').in('game_id',ids).limit(10000)
+  fetchLizaRows('game_players','game_id,member_id,team',ids),
+  fetchLizaRows('score_events','game_id,team,event_type,concept,voided,points',ids)
  ]);
- if(players.error||events.error)throw players.error||events.error;
- if((players.data||[]).length===4000||(events.data||[]).length===10000)throw Error('Resultados incompletos; paginación necesaria');
  const ev=new Map(),gp=new Map();
- for(const e of events.data||[]){if(!ev.has(e.game_id))ev.set(e.game_id,[]);ev.get(e.game_id).push(e)}
- for(const p of players.data||[]){if(!gp.has(p.game_id))gp.set(p.game_id,[]);gp.get(p.game_id).push(p)}
+ for(const e of events){if(!ev.has(e.game_id))ev.set(e.game_id,[]);ev.get(e.game_id).push(e)}
+ for(const p of players){if(!gp.has(p.game_id))gp.set(p.game_id,[]);gp.get(p.game_id).push(p)}
  return bounds.map(b=>{
   const out=new Map();
   for(const game of games){
