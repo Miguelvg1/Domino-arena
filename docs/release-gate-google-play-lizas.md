@@ -6,6 +6,11 @@
 - Migración candidata: `sql/lizas_production_migration_candidate.sql`; prueba SQL transaccional en laboratorio con ROLLBACK pasó.
 - Auditoría de producción de solo lectura: 864/864 partidas finalizadas conciliadas, 864/864 con 4 jugadores (2+2); 864/864 con anotaciones normales históricas sin concepto. No inventar lizas antiguas.
 
+## Bloqueo confirmado — verificación del 8 de noviembre de 2026
+- El manifiesto del laboratorio `titanes_restore_check.snapshot_manifest` contiene 27 tablas, pero **no acredita restauración de datos críticos**: `games` 935 esperadas / 0 importadas, `game_players` 3740 / 0, `score_events` 6744 / 0 y `members` 79 / 0 (instantánea del 6 de noviembre).
+- **No habilitar la bandera LIZA_LAB_ENABLED en producción ni aplicar la migración** hasta contar con respaldo actual verificable y prueba de restauración. El manifiesto es antiguo y no sustituye un respaldo completo.
+- El código de estadísticas ya pagina partidas y anotaciones y valida marcadores; siguen pendientes pruebas autenticadas de extremo a extremo y AAB.
+
 ## Secuencia obligatoria (sin saltar pasos)
 1. Confirmar respaldo recuperable de producción (base de datos, autenticación y configuración), fecha y procedimiento de restauración. Verificar permisos, extensiones y firmas RPC. Programar ventana sin partidas activas.
 2. Probar con datos representativos y con usuario autenticado real en entorno aislado: añadir 140 dominada, 30 multa, 60 salida a dos caritas, corregir/anular y cerrar a 200; confirmar 1 liza propinada y 1 recibida por jugador correspondiente, sin alterar partidas previas. Probar un caso con dominada del perdedor (NO liza) y un histórico sin concepto (indeterminado).
