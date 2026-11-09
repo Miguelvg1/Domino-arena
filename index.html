@@ -220,7 +220,11 @@ async function loadLizaStats(){
     totals[e.team]+=pts;return true;
    });
    const reconciled=validPoints&&totals.L===Number(game.largos_score)&&totals.C===Number(game.cortos_score);
-   const unknown=!all.length||all.some(e=>e.event_type==='normal'&&!e.concept)||!reconciled;
+   const winnerScore=Number(game.winner==='L'?game.largos_score:game.cortos_score);
+   const loserScore=Number(game.winner==='L'?game.cortos_score:game.largos_score);
+   const validWin=Number.isFinite(winnerScore)&&Number.isFinite(loserScore)&&winnerScore>=200&&loserScore>=0&&loserScore<200;
+   const knownTypes=new Set(['normal','multa','capicua','paso_corrido','chivo','pase_con_ficha','paso_salida_doble','dos_carotas']);
+   const unknown=!all.length||all.some(e=>!knownTypes.has(e.event_type)||(e.event_type==='normal'&&!e.concept))||!reconciled||!validWin;
    if(!unknown&&losing.some(e=>e.event_type==='normal'&&e.concept==='dominada'))continue;
    const members=gp.get(game.id)||[];
    if(members.length!==4||new Set(members.map(p=>p.member_id)).size!==4||members.filter(p=>p.team==='L').length!==2||members.filter(p=>p.team==='C').length!==2)continue;
