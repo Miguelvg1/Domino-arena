@@ -1,0 +1,33 @@
+name: Android build readiness
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'android/**'
+      - 'www/**'
+      - '.github/workflows/android-readiness.yml'
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect Android build inputs (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '### Android build readiness' >> "$GITHUB_STEP_SUMMARY"
+          for path in package.json package-lock.json capacitor.config.json www/index.html android/gradlew android/app/build.gradle; do
+            if [ -f "$path" ]; then
+              echo "PRESENT: $path"
+              echo "- PRESENT: $path" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "MISSING: $path"
+              echo "- MISSING: $path" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          echo 'Readiness only: no Android build, signing or deployment performed.' >> "$GITHUB_STEP_SUMMARY"

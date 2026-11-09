@@ -1,0 +1,20 @@
+name: Titanes profile and resume checks
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'scripts/check-profile-resume.cjs'
+      - '.github/workflows/profile-resume-checks.yml'
+  workflow_dispatch:
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check profile and resume code
+        run: node scripts/check-profile-resume.cjs
