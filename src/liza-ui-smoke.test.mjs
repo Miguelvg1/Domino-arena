@@ -17,7 +17,13 @@ const required=[
  ['correction uses in-app confirmation',/const confirmation=await titanPrompt\(`/],
  ['correction confirmation requires explicit word',/confirmation\.trim\(\)\.toUpperCase\(\)!=='CONFIRMAR'/],
  ['prevents duplicate score edits',/if\(b\.dataset\.busy==='1'\)return/],
- ['restores score edit button',/finally\{if\(scoreEdit\)/]
+ ['restores score edit button',/finally\{if\(scoreEdit\)/],
+ ['liza games paginated',/for\(let offset=0;;offset\+=gamePageSize\)/],
+ ['liza score events paginated',/for\(let offset=0;;offset\+=pageSize\)/],
+ ['liza validates final winning score',/const validWin=Number\.isFinite\(winnerScore\)/],
+ ['liza rejects unknown event types',/!knownTypes\.has\(e\.event_type\)/],
+ ['liza distinguishes historical unknowns',/indeterminadas:0/],
+ ['liza period cards rendered',/🏆 LIZAS \$\{label\}/]
 ];
 for(const [label,re] of required) assert.match(html,re,label);
 console.log('UI wiring smoke checks passed ('+required.length+')');
