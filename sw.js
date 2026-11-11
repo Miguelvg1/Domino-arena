@@ -18,7 +18,15 @@ self.addEventListener('notificationclick',event=>{
   let url='/';
   try { const target=new URL(requested,self.location.origin); if(target.origin===self.location.origin && /^https?:$/.test(target.protocol)) url=target.pathname+target.search+target.hash; } catch(_) {}
   event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
-    for(const client of list){if('focus' in client){client.navigate(url);return client.focus();}}
+    const destination=new URL(url,self.location.origin);
+    for(const client of list){
+      try {
+        const current=new URL(client.url);
+        if(current.origin===destination.origin && current.pathname===destination.pathname && current.search===destination.search && current.hash===destination.hash && 'focus' in client){
+          return client.focus();
+        }
+      } catch(_) {}
+    }
     return clients.openWindow?clients.openWindow(url):undefined;
   }));
 });
