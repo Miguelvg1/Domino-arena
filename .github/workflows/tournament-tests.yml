@@ -39,6 +39,10 @@ jobs:
         run: node tournaments/lab/snapshot-store.test.cjs
       - name: PostgreSQL snapshot persistence contract
         run: node tournaments/lab/postgres-store.test.cjs
+      - name: Install isolated TV laboratory server dependencies
+        run: npm install --prefix tournaments/lab --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: TV server read-only access controls
+        run: node tournaments/lab/server.test.cjs
       - name: Laboratory HTTP snapshot integration
         run: node tournaments/lab/http-adapter.test.cjs
       - name: Remote TV synchronization
