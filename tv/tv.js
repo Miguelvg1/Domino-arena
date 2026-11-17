@@ -59,11 +59,19 @@ async function refresh(){
   try{response=await fetch(url.href,{method:'GET',cache:'no-store',credentials:'omit',signal:controller.signal,headers:{Accept:'application/json'}});}finally{clearTimeout(timeout);}
   if(!response.ok)throw Error('Servicio de marcador no disponible ('+response.status+').');
   const record=await response.json();
-  if(!Number.isSafeInteger(record?.revision)||record.revision<0||record.revision<=revision)throw Error('No llegó una revisión nueva del marcador.');
+  if(!Number.isSafeInteger(record?.revision)||record.revision<0)throw Error('La respuesta no incluye una revisión válida.');
+  if(record.revision<revision)throw Error('El marcador remoto está desactualizado.');
+  if(record.revision===revision){el('connection').textContent='● PARTIDAS EN VIVO · SOLO LECTURA';return;}
   revision=record.revision;render(record,false);
  }catch(error){
-  el('connection').textContent='SIN CONEXIÓN · MOSTRANDO ÚLTIMO MARCADOR';
-  el('updated').textContent='Se reintentará automáticamente. '+error.message;
+  if(revision<0){
+   el('connection').textContent='MARCADOR NO DISPONIBLE';
+   el('updated').textContent='Se reintentará automáticamente. '+error.message;
+   el('matches').replaceChildren(node('div','empty','No se pudo cargar el marcador en vivo.'));
+  }else{
+   el('connection').textContent='SIN CONEXIÓN · MOSTRANDO ÚLTIMO MARCADOR';
+   el('updated').textContent='Se reintentará automáticamente. '+error.message;
+  }
  }finally{busy=false;}
 }
 function updateClock(){el('clock').textContent=new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}
