@@ -12,6 +12,8 @@ function createHandler({store,authenticate}){
   try{
    const principal=await authenticate(req);
    if(!principal)return send(401,{error:'Unauthorized'});
+   // TV credentials are read-only even if a store is accidentally configured permissively.
+   if(req.method==='PUT'&&(principal==='viewer'||principal?.role==='viewer'||principal?.deviceType==='tv'))return send(403,{error:'Forbidden'});
    if(req.method==='GET')return send(200,await store.read({id:match[1],principal}));
    if(req.headers['content-type']?.split(';')[0]?.trim()!=='application/json')return send(415,{error:'JSON required'});
    let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>131072)return send(413,{error:'Payload too large'});}
