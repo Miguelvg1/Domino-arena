@@ -1,6 +1,6 @@
 /* Isolated laboratory snapshot service. No production tables or credentials. */
 'use strict';
-const {validate}=require('../shared/tv-snapshot.js');
+const {validate}=require('./tv-snapshot.js');
 function createStore({authorizeRead,authorizeWrite}={}){
  if(typeof authorizeRead!=='function'||typeof authorizeWrite!=='function')throw Error('Authorization callbacks required');
  const records=new Map();
