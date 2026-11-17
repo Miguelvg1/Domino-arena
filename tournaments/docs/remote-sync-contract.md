@@ -18,3 +18,6 @@ Preferir suscripción a cambios del snapshot público con RLS, más lectura inic
 
 ## Aislamiento
 Crear tablas específicas de torneos en laboratorio primero, sin alterar tablas de partidas ordinarias ni vistas oficiales. Auditar RLS y permisos antes de activar Realtime. No habilitar lectura anónima por defecto.
+
+## Visor remoto (implementado solo en frontend)
+La página `tournaments/tv-preview/index.html` admite `?endpoint=/api/tournaments/ID/snapshot`. Por seguridad acepta exclusivamente HTTPS, el mismo origen web y rutas que empiecen con `/api/tournaments/`, sin parámetros ni credenciales en la URL del endpoint. Solicita el snapshot cada 10 segundos, con límite de espera de 8 segundos, y conserva el último marcador cuando falla la red. Sin parámetro `endpoint` mantiene la demostración local entre pestañas. **La ruta API todavía no existe**: el parámetro no activa la sincronización hasta desplegar el backend protegido.
