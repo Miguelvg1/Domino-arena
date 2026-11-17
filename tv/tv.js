@@ -1,0 +1,14 @@
+/* Read-only TV presentation. No Supabase credentials, writes, or private data endpoints. */
+(function(){
+'use strict';
+const DEMO={tournament:'Torneo demostrativo · 13 de diciembre',matches:[{table:1,round:'Semifinal',teamA:'Pareja A',teamB:'Pareja B',scoreA:165,scoreB:130},{table:2,round:'Semifinal',teamA:'Pareja C',teamB:'Pareja D',scoreA:110,scoreB:95}],events:[{label:'Pareja A · Dominada',points:30},{label:'Pareja D · Salida doble',points:60}],bracket:['Primera eliminatoria','Segunda eliminatoria','Semifinales','Final · Tercer lugar']};
+const el=id=>document.getElementById(id);
+function node(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;}
+function empty(parent,text){parent.replaceChildren(node('div','empty',text));}
+function render(data,isDemo){el('tournament').textContent=data.tournament||'Torneo';el('connection').textContent=isDemo?'● DEMOSTRACIÓN · DATOS FICTICIOS':'● MARCADORES EN VIVO';const matches=el('matches');matches.replaceChildren();for(const m of (data.matches||[])){const card=node('article','match');card.append(node('div','round','MESA '+m.table+' · '+m.round));const teams=node('div','teams');for(const [name,score] of [[m.teamA,m.scoreA],[m.teamB,m.scoreB]]){if(teams.childNodes.length)teams.append(node('div','vs','VS'));const t=node('div');t.append(node('div','team',name),node('div','score',Number(score)||0));teams.append(t);}card.append(teams);const bar=node('div','progress');const fill=node('div');fill.style.width=Math.min(100,Math.max(0,Math.max(Number(m.scoreA)||0,Number(m.scoreB)||0)/2))+'%';bar.append(fill);card.append(bar);matches.append(card);}if(!matches.childNodes.length)empty(matches,'No hay partidas en curso');for(const [id,items,format,placeholder] of [['events',data.events,e=>e.label+' · +'+e.points,'Sin anotaciones'],['bracket',data.bracket,r=>typeof r==='string'?r:(r.label||''),'Pendiente de sorteo']]){const parent=el(id);parent.replaceChildren();for(const v of (items||[]))parent.append(node('div','item',format(v)));if(!parent.childNodes.length)empty(parent,placeholder);}}
+function updateClock(){el('clock').textContent=new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}
+el('fullscreen').addEventListener('click',()=>{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});});
+el('refresh').addEventListener('click',()=>{render(DEMO,true);});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement===document.body)el('fullscreen').focus();});
+render(DEMO,true);updateClock();setInterval(updateClock,30000);
+})();
