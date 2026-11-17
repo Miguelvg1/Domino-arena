@@ -63,8 +63,8 @@ Deno.serve(async (request: Request) => {
     return {
       table: index + 1,
       tableName: text(game.table_name, 48) || "Mesa " + (index + 1),
-      teamA: pairLabel("largos") || "Largos",
-      teamB: pairLabel("cortos") || "Cortos",
+      teamA: pairLabel("L") || "Largos",
+      teamB: pairLabel("C") || "Cortos",
       scoreA: Number.isSafeInteger(game.largos_score) ? game.largos_score : 0,
       scoreB: Number.isSafeInteger(game.cortos_score) ? game.cortos_score : 0,
       target: 200,
