@@ -3,6 +3,7 @@
 'use strict';
 const engine=window.TitanesTournament;
 const scoring=window.TitanesTournamentScoring;
+const preview=window.TitanesLocalPreviewSync.create(()=>{});
 const state={players:[],pairs:[],matches:[],events:{},round:1,phase:'registration',champion:null};
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
@@ -10,6 +11,8 @@ function notify(msg){el('message').textContent=msg;}
 function playerName(id){return state.players.find(p=>p.id===id)?.name||id;}
 function pairName(id){const pair=state.pairs.find(p=>p.id===id);return pair?pair.players.map(p=>p.name).join(' / '):id;}
 function show(){
+ try{preview.publish(window.TitanesBuildTvSnapshot.build(state));}catch(error){console.warn('Vista TV no disponible:',error.message);}
+
  el('count').textContent=state.players.length+' jugadores inscritos';el('draw').disabled=state.players.length<8||state.players.length%2!==0||state.pairs.length>0;
  const players=el('players');players.replaceChildren(...state.players.map(p=>element('li',p.name)));
  const pairs=el('pairs');pairs.replaceChildren(...state.pairs.map(p=>element('li',p.players.map(x=>x.name).join(' / '))));
