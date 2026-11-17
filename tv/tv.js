@@ -32,12 +32,8 @@ function fitGrid(count){
  const width=box.width||window.innerWidth;
  const height=box.height||window.innerHeight*.7;
  const ratio=width/Math.max(1,height);
- let columns=1,best=Infinity;
- for(let c=1;c<=Math.min(6,n);c++){
-  const rows=Math.ceil(n/c),cellRatio=ratio*rows/c,empty=c*rows-n;
-  const cost=Math.abs(Math.log(cellRatio/1.58))+empty*.18;
-  if(cost<best){best=cost;columns=c;}
- }
+ let columns=n===1?1:n<=4?2:n<=6?3:n<=16?4:6;
+ // Stable TV layouts: 1; 2x2; 3x2; 4x4; then 6x4 for up to 24 tables.
  const rows=Math.ceil(n/columns),cellWidth=width/columns,cellHeight=height/rows;
  grid.style.setProperty('--cols',columns);
  grid.style.setProperty('--rows',rows);
