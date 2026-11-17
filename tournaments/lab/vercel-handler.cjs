@@ -3,7 +3,7 @@
 const crypto=require('node:crypto');
 const {Pool}=require('pg');
 const {createPostgresStore}=require('./postgres-store.cjs');
-const {validate}=require('../shared/tv-snapshot.js');
+const {validate}=require('./tv-snapshot.js');
 const same=(a,b)=>{if(typeof a!=='string'||typeof b!=='string'||!b)return false;return crypto.timingSafeEqual(crypto.createHash('sha256').update(a).digest(),crypto.createHash('sha256').update(b).digest());};
 function createLabHandler({env=process.env,pool}={}){
  const {DATABASE_URL,LAB_EDITOR_TOKEN,LAB_VIEWER_TOKEN}=env;
