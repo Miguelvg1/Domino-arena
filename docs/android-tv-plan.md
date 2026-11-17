@@ -1,33 +1,35 @@
 # Titanes Dominó — Android TV (trabajo aislado)
-Fecha de preparación: 2026-11-17
+Fecha de revisión: 2026-11-17
 
 ## Objetivo
-Hacer que Titanes Dominó aparezca como instalable en Google Play para televisores Android TV/Google TV compatibles, sin cambiar la experiencia móvil de anotaciones diarias.
+Hacer que Titanes Dominó aparezca como instalable en Google Play para televisores Android TV/Google TV compatibles, sin cambiar la experiencia móvil ni tocar la aplicación oficial.
 
 ## Estado verificado
 - Aplicación Google Play: `com.titanesdomino.app`.
 - Proyecto Capacitor: `appId=com.titanesdomino.app`, `webDir=www`.
-- En esta rama no se encontró `android/app/src/main/AndroidManifest.xml` ni `android/app/build.gradle`; el proyecto nativo puede generarse durante CI.
-- Hay un prototipo TV separado en `prototypes/torneo-tv-demo.html`, solo con datos de demostración.
-- No hay APK/AAB Android TV generado ni compatibilidad confirmada por Play Console.
+- El código web real sí está en la raíz del repositorio: `index.html` y los scripts cargados desde la raíz. La app usa Supabase con una clave publicable y contiene operaciones de escritura para partidas.
+- La interfaz web actual no presenta un modo TV y sus scripts no implementan navegación específica para mando D-pad.
+- La rama contiene un prototipo TV aislado con datos ficticios y contratos de snapshot. El endpoint real y el backend de lectura autorizada no están configurados.
+- El workflow Android TV genera un paquete de prueba separado, `com.titanesdomino.tvtest`, con la interfaz de demostración. No sobrescribe la instalación oficial.
+- El APK de demostración superó un smoke test en emulador Android TV API 34: instalación, inicio y navegación D-pad sin cierre fatal. El artefacto de prueba se publicó en GitHub Actions; expiración indicada por GitHub: 24 de noviembre de 2026.
+- No se ha generado un APK de TV con la app web real ni un AAB listo para Play. Tampoco está verificada la disponibilidad del listing en Play Console para televisores.
 
-## Requisitos técnicos antes de publicar
-1. Inspeccionar el workflow de CI que genera el proyecto Android; determinar versión real del SDK y del manifiesto.
-2. Preparar interfaz de TV horizontal, legible a distancia y navegable con mando D-pad (foco visible, sin dependencia táctil).
-3. Añadir al manifiesto Android `android.software.leanback` y `android.hardware.touchscreen` con `required=false` cuando corresponda, y actividad launcher TV con categoría `LEANBACK_LAUNCHER` sin eliminar `LAUNCHER` móvil.
-4. Proveer banner Android TV 320×180 px y recursos requeridos, y verificar iconos/identidad visual.
-5. Implementar vista de solo lectura autenticada y autorizada; jamás incluir claves de servicio ni exponer datos privados. Actualizaciones en vivo con suscripciones seguras.
-6. Mantener las tablas y los marcadores de partidas diarias intactos; datos del torneo separados por `tournament_id` y `match_id`.
-7. Probar mando a distancia, arranque, reconexión de red, 1080p/4K, ahorro de pantalla, cierre de sesión y comportamiento sin partidas.
-8. Compilar y validar AAB firmado, revisar catálogo de dispositivos y requisitos Android TV en Play Console, usar pista de prueba antes de producción.
-9. No publicar ni modificar permisos/RLS/producción sin autorización expresa tras pruebas.
+## Riesgos técnicos identificados
+- Empaquetar la app móvil completa sin cambios expondría en TV acciones de escritura de partidas y una interfaz no optimizada para D-pad.
+- El cliente usa servicios de producción; no se debe probar una APK completa navegando funciones que escriban en partidas reales.
+- El visor TV de torneo puede conectarse solo después de disponer de un endpoint de lectura autorizado y datos aislados. No incluir claves de servicio ni permisos de escritura en el cliente de TV.
+
+## Próximas tareas
+1. Diseñar una entrada/modo TV de solo lectura, sin botones de anotación o cierre de partidas ordinarias, con foco visible y navegación completa por D-pad.
+2. Definir una API de snapshot TV autorizada y aislada. No habilitar lectura anónima ni cambiar RLS de producción para facilitar la prueba.
+3. Mantener el paquete de laboratorio con ID distinto al oficial; ejecutar pruebas de foco, arranque, red y resolución en emulador y TV física.
+4. Proveer branding final: icono y banner Android TV 320×180 px.
+5. Generar AAB de lanzamiento firmado con la cuenta del propietario, revisar catálogo de dispositivos y habilitar factor de forma TV en Play Console tras pruebas.
+6. Mantener la app Android móvil disponible; el manifiesto TV debe añadir `LEANBACK_LAUNCHER` y declarar touchscreen opcional sin eliminar `LAUNCHER`.
+7. No publicar ni modificar permisos/RLS/producción sin autorización expresa tras pruebas.
+
+## Pendiente Samsung Tizen
+Tizen requiere su propio paquete web firmado `.wgt`, pruebas con control remoto y certificado/perfil Samsung. No existe un paquete publicado en Samsung Apps.
 
 ## Organización del torneo
-- Inscripción de número variable de parejas; sorteo auditable; dos eliminatorias, semifinales (4 parejas), final y partido por tercer lugar.
-- Para cantidades no potencia de dos: propuestas de ronda previa o pases automáticos sujetas a aprobación.
-- Horarios sugeridos según disponibilidad; solicitudes de cambio y aprobación final por Presidencia.
-- Marcadores y anotaciones de torneo independientes de las partidas ordinarias.
-- Pantalla TV para seguimiento de encuentros, cuadros, últimas anotaciones, resultados y podio.
-
-## Entrega inmediata
-Solo especificación y prototipo en rama aislada. No afirmar que la app ya aparece en Play Store TV.
+El módulo de torneos permanece en segunda etapa. Sus marcadores deben seguir separados de las partidas ordinarias.
