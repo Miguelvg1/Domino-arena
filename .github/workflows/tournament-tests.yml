@@ -23,4 +23,5 @@ jobs:
       - name: Validate tournament engine
         run: |
           node tournaments/tournament-engine.test.cjs
+          node tournaments/scoring.test.cjs
           node tournaments/shared/tv-snapshot.test.cjs
