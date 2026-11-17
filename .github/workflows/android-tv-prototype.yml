@@ -36,6 +36,9 @@ jobs:
         run: |
           mkdir -p www
           cp tv/index.html tv/tv.css tv/tv.js www/
+      - name: Assign test-only Android package ID
+        run: |
+          node -e 'const fs=require("node:fs"); const p="capacitor.config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.appId="com.titanesdomino.tvtest"; c.appName="Titanes TV Prueba"; fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");'
       - name: Generate Capacitor Android project
         run: |
           if [ ! -f android/gradlew ]; then npx cap add android; fi
@@ -46,6 +49,7 @@ jobs:
         run: |
           grep -q 'android.intent.category.LEANBACK_LAUNCHER' android/app/src/main/AndroidManifest.xml
           grep -q 'android.hardware.touchscreen.*android:required="false"' android/app/src/main/AndroidManifest.xml
+          grep -q 'com.titanesdomino.tvtest' android/app/build.gradle
           test -s android/app/src/main/res/drawable-nodpi/tv_banner.png
           test -s www/index.html
       - name: Build Android TV debug APK for internal testing
