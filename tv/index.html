@@ -1,1 +1,31 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071527"><title>Titanes Dominó | Pantalla TV</title><link rel="stylesheet" href="tv.css"></head><body><header><div><small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small><h1>🏆 TITANES DOMINÓ</h1><div id="tournament">Centro de transmisión de torneos</div></div><div id="connection" aria-live="polite">MODO DEMOSTRACIÓN</div></header><main><div class="toolbar"><button id="fullscreen" type="button">⛶ Pantalla completa</button><button id="refresh" type="button">↻ Actualizar</button><span id="clock"></span></div><section id="matches" class="matches" aria-label="Partidas en vivo"></section><div class="panels"><section class="panel"><h2>⚡ Últimas anotaciones</h2><div id="events"></div></section><section class="panel"><h2>🏅 Cuadro eliminatorio</h2><div id="bracket"></div></section></div></main><footer>JUGAMOS CON HONOR, GANAMOS CON RESPETO · PANTALLA SOLO LECTURA</footer><script src="tv.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071527">
+<title>Titanes Dominó | Partidas en vivo</title>
+<link rel="stylesheet" href="tv.css">
+</head>
+<body>
+<header>
+  <div>
+    <small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small>
+    <h1>🁣 TITANES DOMINÓ</h1>
+    <div id="subtitle">Seguimiento público de partidas en vivo</div>
+  </div>
+  <div id="connection" role="status" aria-live="polite">MODO DEMOSTRACIÓN</div>
+</header>
+<main>
+  <div class="toolbar">
+    <button id="fullscreen" type="button">⛶ Pantalla completa</button>
+    <button id="refresh" type="button">↻ Actualizar</button>
+    <span id="clock"></span>
+  </div>
+  <div id="updated" aria-live="polite"></div>
+  <section id="matches" class="matches" aria-label="Marcadores de las partidas activas"></section>
+</main>
+<footer>MARCADOR PÚBLICO · SOLO LECTURA · No permite anotar ni modificar partidas</footer>
+<script src="tv.js"></script>
+</body>
+</html>
