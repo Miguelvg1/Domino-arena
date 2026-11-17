@@ -36,7 +36,7 @@ jobs:
         run: |
           node --check tv/tv.js
           node --input-type=module <<'NODE'
-          const url = "https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/public-live-games";
+          const url = "https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/public-live-games-v2";
           const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
           if (!response.ok) throw new Error("Snapshot GET failed: " + response.status);
           const record = await response.json();
