@@ -29,7 +29,7 @@ El visor consulta una URL HTTPS configurada durante el empaquetado con `window.T
 }
 ```
 
-El endpoint `public-live-games` está desplegado en el proyecto de laboratorio y lee `live_games_feed` más `game_players`/`members`. El archivo `tv/config.js` apunta solo a ese proyecto; no se ha desplegado en producción. La consulta GET probada devolvió un snapshot válido con cero mesas activas en el laboratorio. Debe publicar únicamente mesa, nombres visibles, marcador, meta y estado. No devolver IDs internos, perfiles, teléfonos, PIN, chat, credenciales ni historial. El cliente descarta campos no utilizados y nunca envía escrituras. El servidor debe ser de solo lectura y responder solo con la lista pública aprobada.
+El endpoint `public-live-games-v2` está desplegado en el proyecto de laboratorio y lee `live_games_feed` más `game_players`/`members`. El archivo `tv/config.js` apunta solo a ese proyecto; no se ha desplegado en producción. La consulta GET probada devolvió un snapshot válido con cero mesas activas en el laboratorio. Debe publicar únicamente mesa, nombres visibles, marcador, meta y estado. No devolver IDs internos, perfiles, teléfonos, PIN, chat, credenciales ni historial. El cliente descarta campos no utilizados y nunca envía escrituras. El servidor debe ser de solo lectura y responder solo con la lista pública aprobada.
 
 ## Pendiente antes de mostrar partidas reales
 - Probar el endpoint con una partida activa de laboratorio para validar los nombres de las parejas y los puntajes; actualmente el proyecto de prueba no tiene partidas activas.
