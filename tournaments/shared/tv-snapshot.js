@@ -11,7 +11,7 @@ function validate(input){
  if(!Array.isArray(input.matches))throw Error('Faltan los encuentros');
  return {schemaVersion:1,tournament:text(input.tournament,120),updatedAt:text(input.updatedAt,40),
  matches:safeArray(input.matches,32).map((m,i)=>({table:tableNumber(m?.table,i+1),round:text(m?.round,50),teamA:text(m?.teamA,90),teamB:text(m?.teamB,90),scoreA:score(m?.scoreA),scoreB:score(m?.scoreB)})),
- events:safeArray(input.events,20).map(e=>({label:text(e?.label,140),points:score(e?.points)})),
+ events:safeArray(input.events,20).map((e,i)=>({id:text(e?.id,120)||'legacy-'+i,label:text(e?.label,200),points:score(e?.points),createdAt:text(e?.createdAt,40)})),
  bracket:safeArray(input.bracket,40).map(b=>typeof b==='string'?text(b,140):{label:text(b?.label,140)})};
 }
 return {validate};

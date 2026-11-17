@@ -13,7 +13,8 @@ function build(state,updatedAt=new Date().toISOString()){
   return {table:i+1,round:String(m.round||state.phase||'Eliminatoria'),teamA:name(m.pairA),teamB:name(m.pairB),scoreA:score.get(m.pairA),scoreB:score.get(m.pairB)};
  });
  const bracket=state.matches.map(m=>({label:m.type==='bye'?'Pase: '+name(m.winner):name(m.pairA)+' vs '+name(m.pairB)+(m.winner?' · Ganó '+name(m.winner):'')}));
- return tv.validate({schemaVersion:1,tournament:String(state.name||'Torneo Titanes'),updatedAt,matches,bracket,events:[]});
+ const events=(Array.isArray(state.notifications)?state.notifications:[]).slice(-20).map((event,i)=>({id:String(event.id||'notice-'+i).slice(0,120),label:String(event.label||'').slice(0,200),points:Number.isSafeInteger(event.points)?event.points:0,createdAt:String(event.createdAt||'').slice(0,40)}));
+ return tv.validate({schemaVersion:1,tournament:String(state.name||'Torneo Titanes'),updatedAt,matches,bracket,events});
 }
 return {build};
 });

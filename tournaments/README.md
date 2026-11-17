@@ -5,7 +5,8 @@
 - Los tipos fijos tienen sus valores de la app: +30, +60 o +100. Se registra la causa y el anotador de laboratorio.
 - Al llegar a 200, se avisa y el organizador debe confirmar el cierre.
 - Cada anotación conserva historial. Para corregir una, se exige motivo; no se borra el registro anterior.
-- La pantalla móvil conserva controles de torneo. La vista de TV solo muestra las partidas del torneo, puntajes y cuadro; no tiene botones para anotar o corregir.
+- La pantalla móvil conserva controles de torneo. La vista de TV solo muestra las partidas del torneo, puntajes, cuadro y avisos de anotación; no tiene botones para anotar o corregir.
+- Cada anotación genera un aviso de “Liza actualizada” en la TV con pareja, causa y nuevo marcador. Al activar **Voz** con el control remoto, el navegador lee exactamente el texto del aviso en español. La voz depende de que el televisor ofrezca síntesis de voz.
 
 ## Estado de desarrollo
 - `tournament-engine.js`: parejas, sorteos, cuadros, resultados y horarios sujetos a aprobación.

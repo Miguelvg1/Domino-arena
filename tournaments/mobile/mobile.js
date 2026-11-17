@@ -3,7 +3,7 @@
 'use strict';
 const engine=window.TitanesTournament,scoring=window.TitanesTournamentScoring;
 const preview=window.TitanesLocalPreviewSync.create(()=>{});
-const state={name:'Torneo Titanes',players:[],pairs:[],matches:[],events:{},round:1,phase:'registration',champion:null};
+const state={name:'Torneo Titanes',players:[],pairs:[],matches:[],events:{},notifications:[],round:1,phase:'registration',champion:null};
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
@@ -26,8 +26,14 @@ function makeScoreForm(match,pairId){
    const points=scoring.pointsFor(kind.value)??Number(input.value);
    state.events[match.id]=scoring.add(match,state.events[match.id]||[],pairId,points,kind.value,'anotador-demo');
    const after=scoring.score(match,state.events[match.id]);
+   const tableNumber=state.matches.filter(m=>m.type==='match').findIndex(m=>m.id===match.id)+1;
+   const cause=scoring.POINT_TYPES[kind.value].label;
+   const notice='Liza actualizada en Mesa '+tableNumber+': '+pairName(pairId)+' anotó '+points+' puntos por '+cause+'. Marcador '+after[match.pairA]+' a '+after[match.pairB]+'.';
+   const annotation=state.events[match.id][state.events[match.id].length-1];
+   state.notifications.push({id:match.id+':'+annotation.id,label:notice,points,createdAt:annotation.createdAt});
+   if(state.notifications.length>20)state.notifications=state.notifications.slice(-20);
    const hit=[match.pairA,match.pairB].find(id=>before[id]<scoring.TARGET&&after[id]>=scoring.TARGET);
-   if(hit)notify200(hit);else notify('Puntos anotados en el encuentro (laboratorio de torneo).');
+   if(hit){notify200(hit);state.notifications[state.notifications.length-1].label+=' '+pairName(hit)+' llegó a 200; cierre pendiente de confirmación.';}else notify(notice);
    show();
   }catch(error){notify(error.message);}
  });
@@ -107,6 +113,6 @@ el('draw').addEventListener('click',()=>{try{
  state.pairs=engine.pairPlayers(state.players);const draw=engine.matchesFromPairs(state.pairs);state.matches=draw.first;state.phase='elimination';
  notify(draw.byes?'Sorteo listo: '+draw.byes+' pases automáticos pendientes de aprobación.':'Sorteo realizado.');show();
 }catch(error){notify(error.message);}});
-el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.events={};state.round=1;state.phase='registration';state.champion=null;notify('Laboratorio reiniciado.');show();});
+el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.events={};state.notifications=[];state.round=1;state.phase='registration';state.champion=null;notify('Laboratorio reiniciado.');show();});
 show();
 })();

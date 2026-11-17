@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id),el=(tag,text)=>{const n=document.createElement(tag);n.textContent=String(text);return n;};
-let lastUpdate='',lastCount=1;
+let lastUpdate='',lastCount=1,seenNoticeIds=null,voiceEnabled=false;
 function fitGrid(count){
  const grid=$('matches'),n=Math.max(1,count),box=grid.getBoundingClientRect(),width=box.width||innerWidth,height=box.height||innerHeight*.65;
  const columns=n===1?1:n<=4?2:n<=6?3:n<=16?4:6,rows=Math.ceil(n/columns);
@@ -10,9 +10,20 @@ function fitGrid(count){
  grid.style.setProperty('--score',Math.max(24,Math.min(142,width/columns*.27,height/rows*.36))+'px');
  lastCount=n;
 }
+function announceNotice(notice){
+ const banner=$('liza-notice');banner.textContent=notice;banner.hidden=false;
+ if(!voiceEnabled||!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance)return;
+ try{window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(notice);utterance.lang='es-DO';utterance.rate=.96;const spanish=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('es'));if(spanish)utterance.voice=spanish;speechSynthesis.speak(utterance);}catch(_){/* El aviso visual sigue disponible si la TV no ofrece voz. */}
+}
+function consumeNotices(events){
+ const notices=Array.isArray(events)?events:[];
+ if(seenNoticeIds===null){seenNoticeIds=new Set(notices.map(e=>e.id));if(notices.length)announceNotice(notices[notices.length-1].label);return;}
+ for(const notice of notices){if(!notice.id||seenNoticeIds.has(notice.id))continue;seenNoticeIds.add(notice.id);announceNotice(notice.label);}
+ if(seenNoticeIds.size>100)seenNoticeIds=new Set(notices.map(e=>e.id));
+}
 function render(raw){
  let s;try{s=window.TitanesTvSnapshot.validate(raw);}catch(e){$('status').textContent='Datos inválidos: '+e.message;return;}
- if(s.updatedAt&&lastUpdate&&s.updatedAt<lastUpdate)return;lastUpdate=s.updatedAt;
+ if(s.updatedAt&&lastUpdate&&s.updatedAt<lastUpdate)return;lastUpdate=s.updatedAt;consumeNotices(s.events);
  $('title').textContent='🏆 '+s.tournament;
  $('status').textContent='● '+(s.updatedAt?'Actualizado '+new Date(s.updatedAt).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'}):'Esperando marcador')+' · SOLO LECTURA';
  const grid=$('matches');grid.replaceChildren();
@@ -31,6 +42,9 @@ function render(raw){
  grid.dataset.count=String(s.matches.length);fitGrid(s.matches.length);
  $('bracket').replaceChildren(...s.bracket.map(b=>el('li',typeof b==='string'?b:b.label)));
 }
+const voiceButton=$('voice-toggle');
+if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){voiceButton.disabled=true;voiceButton.title='Esta TV no ofrece voz del navegador; las notificaciones seguirán apareciendo en pantalla.';voiceButton.textContent='Voz no disponible';}
+voiceButton.addEventListener('click',()=>{voiceEnabled=!voiceEnabled;voiceButton.setAttribute('aria-pressed',String(voiceEnabled));voiceButton.textContent=voiceEnabled?'🔊 Voz activada':'🔈 Activar voz';if(!voiceEnabled&&'speechSynthesis' in window)speechSynthesis.cancel();});
 window.addEventListener('resize',()=>fitGrid(lastCount));
 /* Remote mode requires operator-configured same-origin HTTPS endpoint.
    The backend must enforce tournament access and return {revision, snapshot}. */
