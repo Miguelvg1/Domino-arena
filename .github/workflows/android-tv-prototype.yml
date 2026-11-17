@@ -32,10 +32,29 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Validate public read-only snapshot
+        run: |
+          node --check tv/tv.js
+          node --input-type=module <<'NODE'
+          const url = "https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/public-live-games";
+          const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+          if (!response.ok) throw new Error("Snapshot GET failed: " + response.status);
+          const record = await response.json();
+          if (!Number.isSafeInteger(record.revision) || record.revision < 0) throw new Error("Missing monotonic snapshot revision");
+          if (record.snapshot?.schemaVersion !== 1 || !Array.isArray(record.snapshot.matches)) throw new Error("Invalid live games snapshot");
+          const allowed = new Set(["table", "tableName", "teamA", "teamB", "scoreA", "scoreB", "target", "status"]);
+          for (const match of record.snapshot.matches) {
+            if (Object.keys(match).some(key => !allowed.has(key))) throw new Error("Snapshot contains a non-public field");
+            if (match.status !== "activa" || !Number.isSafeInteger(match.scoreA) || !Number.isSafeInteger(match.scoreB)) throw new Error("Invalid active match");
+          }
+          const write = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+          if (write.status !== 405) throw new Error("Public feed unexpectedly accepted a write method");
+          console.log("Public snapshot valid; matches:", record.snapshot.matches.length, "POST:", write.status);
+          NODE
       - name: Assemble isolated TV-only web assets
         run: |
           mkdir -p www
-          cp tv/index.html tv/tv.css tv/tv.js www/
+          cp tv/index.html tv/tv.css tv/tv.js tv/config.js www/
       - name: Assign test-only Android package ID
         run: |
           node -e 'const fs=require("node:fs"); const p="capacitor.config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.appId="com.titanesdomino.tvtest"; c.appName="Titanes TV Prueba"; fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");'
