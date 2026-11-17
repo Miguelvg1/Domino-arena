@@ -3,7 +3,7 @@
 'use strict';
 const engine=window.TitanesTournament;
 const scoring=window.TitanesTournamentScoring;
-const state={players:[],pairs:[],matches:[],events:{},round:1};
+const state={players:[],pairs:[],matches:[],events:{},round:1,phase:'registration',champion:null};
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
@@ -42,14 +42,23 @@ function show(){
 
  matches.append(card);
  }
- if(state.matches.length&&state.matches.every(m=>m.winner)&&state.matches.filter(m=>m.type==='match').length){
+ if(state.phase==='medals'&&state.matches.length===2&&state.matches.every(m=>m.winner)){
+  const result=element('section');result.className='success';result.append(element('h2','🏆 Campeones: '+pairName(state.matches[0].winner)));result.append(element('p','🥈 Subcampeones: '+pairName(state.matches[0].winner===state.matches[0].pairA?state.matches[0].pairB:state.matches[0].pairA)));result.append(element('p','🥉 Tercer lugar: '+pairName(state.matches[1].winner)));matches.append(result);
+ }
+ if(state.phase!=='medals'&&state.matches.length&&state.matches.every(m=>m.winner)&&state.matches.filter(m=>m.type==='match').length){
  const next=element('button','Preparar siguiente ronda');
- next.addEventListener('click',()=>{try{if(state.matches.length===2){const finals=engine.medalMatches(state.matches);state.matches=[finals.final,finals.third];notify('Final y tercer lugar preparados.');}else if(state.matches.length===1){notify('El torneo ha terminado.');return;}else{state.round++;state.matches=engine.nextRound(state.matches,'ronda-'+state.round);notify('Siguiente ronda preparada.');}show();}catch(err){notify(err.message);}});
+ next.addEventListener('click',()=>{try{
+   if(state.matches.length===2){
+    const finals=engine.medalMatches(state.matches);state.matches=[finals.final,finals.third];state.phase='medals';notify('Final y tercer lugar preparados.');
+   }else{
+    state.round++;state.matches=engine.nextRound(state.matches,'ronda-'+state.round);state.phase='elimination';notify('Siguiente ronda preparada.');
+   }show();
+  }catch(err){notify(err.message);}});
  matches.append(next);
  }
 }
 el('register').addEventListener('submit',event=>{event.preventDefault();if(state.pairs.length){notify('Reinicia el laboratorio para modificar inscritos.');return;}const name=el('name').value.trim();if(name.length<2)return;if(state.players.some(p=>p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){notify('Ese nombre ya está inscrito.');return;}state.players.push({id:'player-'+(state.players.length+1),name});el('name').value='';notify('Jugador agregado.');show();});
-el('draw').addEventListener('click',()=>{try{state.pairs=engine.pairPlayers(state.players);const draw=engine.matchesFromPairs(state.pairs);state.matches=draw.first;notify(draw.byes?'Sorteo listo: '+draw.byes+' pases automáticos (pendientes de aprobación real).':'Sorteo realizado.');show();}catch(err){notify(err.message);}});
-el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.events={};state.round=1;notify('Laboratorio reiniciado.');show();});
+el('draw').addEventListener('click',()=>{try{state.pairs=engine.pairPlayers(state.players);const draw=engine.matchesFromPairs(state.pairs);state.matches=draw.first;state.phase='elimination';notify(draw.byes?'Sorteo listo: '+draw.byes+' pases automáticos (pendientes de aprobación real).':'Sorteo realizado.');show();}catch(err){notify(err.message);}});
+el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.events={};state.round=1;state.phase='registration';state.champion=null;notify('Laboratorio reiniciado.');show();});
 show();
 })();
