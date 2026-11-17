@@ -36,12 +36,14 @@ jobs:
         run: |
           node --check tv/tv.js
           node --input-type=module <<'NODE'
-          const url = "https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/public-live-games-v2";
+          const url = "https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/public-live-games-v3";
           const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
           if (!response.ok) throw new Error("Snapshot GET failed: " + response.status);
           const record = await response.json();
           if (!Number.isSafeInteger(record.revision) || record.revision < 0) throw new Error("Missing monotonic snapshot revision");
           if (record.snapshot?.schemaVersion !== 1 || !Array.isArray(record.snapshot.matches)) throw new Error("Invalid live games snapshot");
+          const demo = record.snapshot.matches.find(match => match.tableName === "TV LAB DEMO");
+          if (!demo || demo.teamA !== "TV Azul 1 / TV Azul 2" || demo.teamB !== "TV Rojo 1 / TV Rojo 2" || demo.scoreA !== 120 || demo.scoreB !== 80 || demo.target !== 200) throw new Error("Laboratory match mapping or scores are incorrect");
           const allowed = new Set(["table", "tableName", "teamA", "teamB", "scoreA", "scoreB", "target", "status"]);
           for (const match of record.snapshot.matches) {
             if (Object.keys(match).some(key => !allowed.has(key))) throw new Error("Snapshot contains a non-public field");
