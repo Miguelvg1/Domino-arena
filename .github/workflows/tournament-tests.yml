@@ -37,6 +37,8 @@ jobs:
         run: node tournaments/shared/local-preview-sync.test.cjs
       - name: Laboratory snapshot authorization and revisions
         run: node tournaments/lab/snapshot-store.test.cjs
+      - name: PostgreSQL snapshot persistence contract
+        run: node tournaments/lab/postgres-store.test.cjs
       - name: Laboratory HTTP snapshot integration
         run: node tournaments/lab/http-adapter.test.cjs
       - name: Remote TV synchronization
