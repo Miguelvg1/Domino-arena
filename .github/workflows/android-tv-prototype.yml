@@ -1,0 +1,49 @@
+name: Android TV prototype APK
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/torneos-tv-diciembre-2026
+    paths:
+      - 'tv/**'
+      - 'scripts/enable_android_tv.cjs'
+      - '.github/workflows/android-tv-prototype.yml'
+permissions:
+  contents: read
+jobs:
+  android-tv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm ci
+      - name: Assemble isolated TV-only web assets
+        run: |
+          mkdir -p www
+          cp tv/index.html tv/tv.css tv/tv.js www/
+      - name: Generate Capacitor Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Enable TV launcher and banner
+        run: node scripts/enable_android_tv.cjs
+      - name: Build Android TV debug APK for internal testing
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: titanes-android-tv-debug-unsigned-for-testing
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
