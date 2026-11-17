@@ -1,6 +1,6 @@
 /* PostgreSQL-backed laboratory tournament snapshots. Requires a server-side pg Pool. */
 'use strict';
-const {validate}=require('../shared/tv-snapshot.js');
+const {validate}=require('./tv-snapshot.js');
 function createPostgresStore({pool,authorizeRead,authorizeWrite}={}){
  if(!pool||typeof pool.connect!=='function'||typeof authorizeRead!=='function'||typeof authorizeWrite!=='function')throw Error('Pool and authorization callbacks required');
  const checkId=id=>{if(typeof id!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(id))throw Error('Invalid tournament ID');};
