@@ -41,6 +41,11 @@ jobs:
         run: node tournaments/lab/postgres-store.test.cjs
       - name: Install isolated TV laboratory server dependencies
         run: npm install --prefix tournaments/lab --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Check Vercel laboratory handler syntax
+        run: |
+          node --check tournaments/lab/vercel-handler.cjs
+          node --check tournaments/lab/api/index.cjs
+          node -e "const v=require('./tournaments/lab/vercel.json'); if(!v.rewrites.some(r=>r.source.includes(':id'))) process.exit(1)"
       - name: TV server read-only access controls
         run: node tournaments/lab/server.test.cjs
       - name: Laboratory HTTP snapshot integration
