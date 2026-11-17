@@ -10,7 +10,7 @@ Hacer que Titanes Dominó pueda instalarse en Android TV/Google TV y ofrecer una
 - El código web real está en la raíz del repositorio: `index.html` y sus scripts. Usa Supabase con una clave publicable y contiene operaciones de anotación, corrección y cierre.
 - La interfaz móvil no cuenta con una experiencia de TV ni navegación D-pad completa.
 - Se preparó un visor TV independiente, sin credenciales ni escrituras. Ahora muestra una pantalla de partidas activas, parejas, marcadores, líder, meta y estado de demostración.
-- Se conserva una ruta de datos ficticios marcada como demostración. El endpoint `public-live-games` se desplegó solo en el proyecto Supabase de laboratorio y el APK de prueba apunta a esa URL pública.
+- Se conserva una ruta de datos ficticios marcada como demostración. El endpoint `public-live-games-v2` se desplegó solo en el proyecto Supabase de laboratorio y el APK de prueba apunta a esa URL pública.
 - La consulta GET al endpoint devolvió HTTP 200 y un snapshot válido con cero partidas activas. OPTIONS devolvió 204 y POST 405. No se añadió ninguna ruta de escritura.
 - El visor espera un snapshot HTTPS sanitizado, con revisión del servidor, y consulta cada 10 segundos. No envía cookies ni credenciales desde el televisor.
 - El workflow Android TV genera una prueba separada `com.titanesdomino.tvtest`; no sobrescribe la instalación oficial. El smoke test de emulador API 34 validó instalación, inicio y navegación D-pad del prototipo.
