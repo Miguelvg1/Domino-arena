@@ -27,3 +27,4 @@ jobs:
           node tournaments/shared/tv-snapshot.test.cjs
           node tournaments/shared/build-snapshot.test.cjs
           node tournaments/shared/local-preview-sync.test.cjs
+          node tournaments/shared/remote-tv-client.test.cjs
