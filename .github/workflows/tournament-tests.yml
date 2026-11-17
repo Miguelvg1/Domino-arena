@@ -25,3 +25,4 @@ jobs:
           node tournaments/tournament-engine.test.cjs
           node tournaments/scoring.test.cjs
           node tournaments/shared/tv-snapshot.test.cjs
+          node tournaments/shared/build-snapshot.test.cjs
