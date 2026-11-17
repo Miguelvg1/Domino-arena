@@ -46,6 +46,8 @@ jobs:
           node --check tournaments/lab/vercel-handler.cjs
           node --check tournaments/lab/api/index.cjs
           node -e "const v=require('./tournaments/lab/vercel.json'); if(!v.rewrites.some(r=>r.source.includes(':id'))) process.exit(1)"
+      - name: Vercel TV API read-only regression
+        run: node tournaments/lab/vercel-handler.test.cjs
       - name: TV server read-only access controls
         run: node tournaments/lab/server.test.cjs
       - name: Laboratory HTTP snapshot integration
