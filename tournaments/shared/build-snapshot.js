@@ -9,7 +9,7 @@ function build(state,updatedAt=new Date().toISOString()){
   const events=state.events?.[m.id]||[];
   if(!m.pairA||!m.pairB||m.pairA===m.pairB)throw Error('Parejas del encuentro inválidas');
   const score=new Map([[m.pairA,0],[m.pairB,0]]);
-  for(const e of events){if(e.matchId!==m.id||e.voided)continue;if(!score.has(e.pairId)||!Number.isInteger(e.points)||e.points<1||e.points>250)throw Error('Historial de puntuación inválido');score.set(e.pairId,score.get(e.pairId)+e.points);}
+  for(const e of events){if(e.matchId!==m.id)throw Error('Evento asignado a otro encuentro');if(e.voided)continue;if(!score.has(e.pairId)||!Number.isInteger(e.points)||e.points<1||e.points>250)throw Error('Historial de puntuación inválido');score.set(e.pairId,score.get(e.pairId)+e.points);}
   return {table:i+1,round:String(m.round||state.phase||'Eliminatoria'),teamA:name(m.pairA),teamB:name(m.pairB),scoreA:score.get(m.pairA),scoreB:score.get(m.pairB)};
  });
  const bracket=state.matches.map(m=>({label:m.type==='bye'?'Pase: '+name(m.winner):name(m.pairA)+' vs '+name(m.pairB)+(m.winner?' · Ganó '+name(m.winner):'')}));
