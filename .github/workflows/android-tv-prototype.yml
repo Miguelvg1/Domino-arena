@@ -36,6 +36,12 @@ jobs:
           npx cap sync android
       - name: Enable TV launcher and banner
         run: node scripts/enable_android_tv.cjs
+      - name: Validate Android TV launcher configuration
+        run: |
+          grep -q 'android.intent.category.LEANBACK_LAUNCHER' android/app/src/main/AndroidManifest.xml
+          grep -q 'android.hardware.touchscreen.*android:required="false"' android/app/src/main/AndroidManifest.xml
+          test -s android/app/src/main/res/drawable-nodpi/tv_banner.png
+          test -s www/index.html
       - name: Build Android TV debug APK for internal testing
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
