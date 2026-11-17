@@ -9,7 +9,7 @@ const el=id=>document.getElementById(id);
 const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
 const config=window.TITANES_TV_CONFIG||{};
 const endpoint=typeof config.snapshotUrl==='string'?config.snapshotUrl:'';
-let revision=-1, timer=null, busy=false;
+let revision=-1,timer=null,busy=false,lastCount=1;
 function validate(record){
  const snapshot=record&&record.snapshot?record.snapshot:record;
  if(!snapshot||snapshot.schemaVersion!==1||!Array.isArray(snapshot.matches))throw Error('Formato de marcador no compatible');
@@ -26,6 +26,27 @@ function validate(record){
  })).filter(m=>m.status==='activa');
  return {updatedAt:safeText(snapshot.updatedAt,40),matches,revision:Number.isSafeInteger(record?.revision)?record.revision:null};
 }
+function fitGrid(count){
+ const grid=el('matches'),n=Math.max(1,count);
+ const box=grid.getBoundingClientRect();
+ const width=box.width||window.innerWidth;
+ const height=box.height||window.innerHeight*.7;
+ const ratio=width/Math.max(1,height);
+ let columns=1,best=Infinity;
+ for(let c=1;c<=Math.min(6,n);c++){
+  const rows=Math.ceil(n/c),cellRatio=ratio*rows/c,empty=c*rows-n;
+  const cost=Math.abs(Math.log(cellRatio/1.58))+empty*.18;
+  if(cost<best){best=cost;columns=c;}
+ }
+ const rows=Math.ceil(n/columns),cellWidth=width/columns,cellHeight=height/rows;
+ grid.style.setProperty('--cols',columns);
+ grid.style.setProperty('--rows',rows);
+ grid.style.setProperty('--score-size',Math.max(24,Math.min(142,cellWidth*.27,cellHeight*.36))+'px');
+ grid.style.setProperty('--team-size',Math.max(12,Math.min(34,cellWidth*.08,cellHeight*.16))+'px');
+ grid.style.setProperty('--table-size',Math.max(12,Math.min(32,cellWidth*.075,cellHeight*.14))+'px');
+ grid.dataset.count=String(count);
+ grid.dataset.density=count>=13?'dense':count>=5?'compact':count>1?'multi':'single';
+}
 function render(raw,isDemo){
  let data;try{data=validate(raw);}catch(error){el('connection').textContent='DATOS NO VÁLIDOS';el('updated').textContent=error.message;return;}
  el('connection').textContent=isDemo?'● DEMOSTRACIÓN · DATOS FICTICIOS':'● PARTIDAS EN VIVO · SOLO LECTURA';
@@ -35,8 +56,8 @@ function render(raw,isDemo){
   const card=node('article','match');
   card.append(node('div','table-name',m.tableName+' · MESA '+m.table));
   const teams=node('div','teams');
-  for(const [name,score,other] of [[m.teamA,m.scoreA,m.scoreB],[m.teamB,m.scoreB,m.scoreA]]){
-   const team=node('div','team-card'+(score>other?' leading':''));
+  for(const [index,name,score,other] of [[0,m.teamA,m.scoreA,m.scoreB],[1,m.teamB,m.scoreB,m.scoreA]]){
+   const team=node('div','team-card team-'+(index===0?'a':'b')+(score>other?' leading':''));
    team.append(node('div','team-name',name),node('div','score',score));
    team.append(node('div','lead-label',score>other?'VA GANANDO':score===other?'EMPATE':''));
    teams.append(team);
@@ -46,7 +67,9 @@ function render(raw,isDemo){
   card.append(node('div','target','Meta: '+m.target+' puntos · '+(remaining?remaining+' para llegar':'meta alcanzada')));
   matches.append(card);
  }
+ lastCount=data.matches.length||1;
  if(!matches.childNodes.length)matches.replaceChildren(node('div','empty','No hay partidas activas en este momento.'));
+ fitGrid(data.matches.length);
 }
 async function refresh(){
  if(busy)return;busy=true;
@@ -78,6 +101,7 @@ function updateClock(){el('clock').textContent=new Date().toLocaleTimeString('es
 el('fullscreen').addEventListener('click',()=>{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});});
 el('refresh').addEventListener('click',()=>refresh());
 document.addEventListener('keydown',event=>{if(event.key==='Enter'&&document.activeElement===document.body)el('refresh').focus();});
+window.addEventListener('resize',()=>fitGrid(lastCount));
 render(DEMO,true);updateClock();refresh();timer=setInterval(refresh,10000);setInterval(updateClock,30000);
 window.addEventListener('pagehide',()=>{if(timer)clearInterval(timer);});
 })();
