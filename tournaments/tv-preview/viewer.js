@@ -1,15 +1,40 @@
-/* Same-origin preview only. No credentials or production network requests. */
-(function(){'use strict';const $=id=>document.getElementById(id);const el=(tag,text)=>{const n=document.createElement(tag);n.textContent=String(text);return n;};let lastUpdate='';
-function render(raw){let s;try{s=window.TitanesTvSnapshot.validate(raw);}catch(e){$('status').textContent='Datos inválidos: '+e.message;return;}
-if(s.updatedAt&&lastUpdate&&s.updatedAt<lastUpdate)return;lastUpdate=s.updatedAt;
-$('title').textContent='🏆 '+s.tournament;$('status').textContent='Vista local · '+(s.updatedAt||'sin fecha');
-$('matches').replaceChildren(...s.matches.map(m=>{const card=el('article','');card.append(el('small',m.round+' · Mesa '+m.table));const teams=el('div','');teams.className='teams';for(const [name,points] of [[m.teamA,m.scoreA],[m.teamB,m.scoreB]]){const row=el('div','');row.append(el('p',name),el('div',points));row.lastChild.className='score';teams.append(row);}card.append(teams);return card;}));
-$('bracket').replaceChildren(...s.bracket.map(b=>el('li',typeof b==='string'?b:b.label)));
+/* Public tournament spectator screen. Read-only: renders sanitized snapshot data only. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id),el=(tag,text)=>{const n=document.createElement(tag);n.textContent=String(text);return n;};
+let lastUpdate='',lastCount=1;
+function fitGrid(count){
+ const grid=$('matches'),n=Math.max(1,count),box=grid.getBoundingClientRect(),width=box.width||innerWidth,height=box.height||innerHeight*.65;
+ const columns=n===1?1:n<=4?2:n<=6?3:n<=16?4:6,rows=Math.ceil(n/columns);
+ grid.style.setProperty('--cols',columns);grid.style.setProperty('--rows',rows);
+ grid.style.setProperty('--score',Math.max(24,Math.min(142,width/columns*.27,height/rows*.36))+'px');
+ lastCount=n;
 }
-/* Remote mode requires an operator-configured same-origin HTTPS endpoint.
-   The endpoint must enforce access and return {revision, snapshot}; no secrets in URL. */
-const params=new URLSearchParams(window.location.search);
-const remotePath=params.get('endpoint');
+function render(raw){
+ let s;try{s=window.TitanesTvSnapshot.validate(raw);}catch(e){$('status').textContent='Datos inválidos: '+e.message;return;}
+ if(s.updatedAt&&lastUpdate&&s.updatedAt<lastUpdate)return;lastUpdate=s.updatedAt;
+ $('title').textContent='🏆 '+s.tournament;
+ $('status').textContent='● '+(s.updatedAt?'Actualizado '+new Date(s.updatedAt).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'}):'Esperando marcador')+' · SOLO LECTURA';
+ const grid=$('matches');grid.replaceChildren();
+ for(const m of s.matches){
+  const card=el('article');const title=el('div',(m.round||'Torneo')+' · MESA '+m.table);title.className='table-title';card.append(title);
+  const teams=el('div');teams.className='teams';
+  for(const [index,name,points,other] of [[0,m.teamA,m.scoreA,m.scoreB],[1,m.teamB,m.scoreB,m.scoreA]]){
+   const side=el('div');side.className='team team-'+(index?'b':'a')+(points>other?' leading':'');
+   const pair=el('div',name);pair.className='team-name';side.append(pair);
+   const score=el('div',points);score.className='score';side.append(score);
+   const lead=el('div',points>other?'VA GANANDO':points===other?'EMPATE':'');lead.className='lead';side.append(lead);teams.append(side);
+  }
+  card.append(teams,el('div','Meta: 200 puntos'));const target=card.lastChild;target.className='target';grid.append(card);
+ }
+ if(!grid.childNodes.length)grid.append(el('div','No hay encuentros activos en este momento.')).lastChild.className='empty';
+ grid.dataset.count=String(s.matches.length);fitGrid(s.matches.length);
+ $('bracket').replaceChildren(...s.bracket.map(b=>el('li',typeof b==='string'?b:b.label)));
+}
+window.addEventListener('resize',()=>fitGrid(lastCount));
+/* Remote mode requires operator-configured same-origin HTTPS endpoint.
+   The backend must enforce tournament access and return {revision, snapshot}. */
+const params=new URLSearchParams(window.location.search),remotePath=params.get('endpoint');
 if(remotePath){
  const endpoint=new URL(remotePath,window.location.href);
  const safe=endpoint.origin===window.location.origin&&endpoint.protocol==='https:'&&endpoint.username===''&&endpoint.password===''&&endpoint.search===''&&endpoint.hash===''&&endpoint.pathname.startsWith('/api/tournaments/');
@@ -17,18 +42,13 @@ if(remotePath){
  else{
   const client=window.TitanesRemoteTvClient.create({
    fetchSnapshot:async()=>{
-    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),8000);
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
     try{const response=await fetch(endpoint.href,{method:'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('HTTP '+response.status);return await response.json();}finally{clearTimeout(timeout);}
-   },
-   onSnapshot:render,
-   onStatus:status=>{if(status==='offline')$('status').textContent='Sin conexión · conservando último marcador';else $('status').textContent='Marcador remoto actualizado';},
-   intervalMs:10000
-  }).start();
-  window.addEventListener('pagehide',()=>client.close());
+   },onSnapshot:render,onStatus:status=>{$('status').textContent=status==='offline'?'Sin conexión · conservando el marcador':'Marcador remoto actualizado · SOLO LECTURA';},intervalMs:10000
+  }).start();window.addEventListener('pagehide',()=>client.close());
  }
 }else{
- const transport=window.TitanesLocalPreviewSync.create(render);
- const initial=transport.read();if(initial)render(initial);
+ const transport=window.TitanesLocalPreviewSync.create(render),initial=transport.read();if(initial)render(initial);
  window.addEventListener('pagehide',()=>transport.close());
 }
 })();
