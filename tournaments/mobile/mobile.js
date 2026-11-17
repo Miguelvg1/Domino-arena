@@ -2,7 +2,8 @@
 (function(){
 'use strict';
 const engine=window.TitanesTournament;
-const state={players:[],pairs:[],matches:[],round:1};
+const scoring=window.TitanesTournamentScoring;
+const state={players:[],pairs:[],matches:[],events:{},round:1};
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
@@ -18,8 +19,27 @@ function show(){
  card.append(element('strong',match.type==='bye'?'Pase automático':'Encuentro '+match.id));
  card.append(element('div',pairName(match.pairA)+' vs '+(match.pairB?pairName(match.pairB):'Pase')));
  if(match.type==='match'&&!match.winner){
-  for(const id of [match.pairA,match.pairB]){const btn=element('button','Ganó '+pairName(id));btn.addEventListener('click',()=>{if(!window.confirm('¿Confirmas el resultado del encuentro?'))return;try{const updated=engine.recordResult(match,id,'organizador-demo');state.matches=state.matches.map(m=>m.id===match.id?updated:m);show();}catch(err){notify(err.message);}});card.append(btn);}
+  const history=state.events[match.id]||[];
+  const totals=scoring.score(match,history);
+  card.append(element('p',pairName(match.pairA)+': '+totals[match.pairA]+' | '+pairName(match.pairB)+': '+totals[match.pairB]));
+  if(Math.max(...Object.values(totals))>=200){
+    const close=element('button','Confirmar cierre a 200');
+    close.addEventListener('click',()=>{if(!window.confirm('¿Confirmar el resultado final del encuentro?'))return;try{const updated=scoring.finish(match,history,'organizador-demo');state.matches=state.matches.map(m=>m.id===match.id?updated:m);notify('Encuentro cerrado.');show();}catch(err){notify(err.message);}});
+    card.append(close);
+  }else{
+    for(const id of [match.pairA,match.pairB]){
+      const form=element('form');form.style.display='flex';form.style.flexWrap='wrap';form.style.alignItems='center';
+      form.append(element('span',pairName(id)+' '));
+      const input=element('input');input.type='number';input.min='1';input.max='250';input.step='1';input.required=true;input.placeholder='Puntos';input.style.maxWidth='110px';form.append(input);
+      const reason=element('select');for(const value of ['Manual','Dominada','Multa','Paso corrido','Capicúa','Chivo','Pase con ficha','Salida doble','Salida a dos caritas']){const opt=element('option',value);opt.value=value;reason.append(opt);}form.append(reason);
+      const btn=element('button','Anotar');btn.type='submit';form.append(btn);
+      form.addEventListener('submit',e=>{e.preventDefault();try{state.events[match.id]=scoring.add(match,state.events[match.id]||[],id,Number(input.value),reason.value,'anotador-demo');notify('Puntos anotados en torneo (solo laboratorio).');show();}catch(err){notify(err.message);}});card.append(form);
+    }
+    const active=history.filter(e=>!e.voided);
+    if(active.length){const latest=active[active.length-1];const correction=element('button','Anular última anotación ('+latest.points+')');correction.className='secondary';correction.addEventListener('click',()=>{const reason=window.prompt('Motivo obligatorio de corrección:');if(reason===null)return;try{state.events[match.id]=scoring.voidEvent(match,history,latest.id,'organizador-demo',reason);notify('Anotación anulada; se conserva el historial.');show();}catch(err){notify(err.message);}});card.append(correction);}
+  }
  }else{const status=element('p','Avanza: '+pairName(match.winner));status.className='success';card.append(status);}
+
  matches.append(card);
  }
  if(state.matches.length&&state.matches.every(m=>m.winner)&&state.matches.filter(m=>m.type==='match').length){
@@ -30,6 +50,6 @@ function show(){
 }
 el('register').addEventListener('submit',event=>{event.preventDefault();if(state.pairs.length){notify('Reinicia el laboratorio para modificar inscritos.');return;}const name=el('name').value.trim();if(name.length<2)return;if(state.players.some(p=>p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){notify('Ese nombre ya está inscrito.');return;}state.players.push({id:'player-'+(state.players.length+1),name});el('name').value='';notify('Jugador agregado.');show();});
 el('draw').addEventListener('click',()=>{try{state.pairs=engine.pairPlayers(state.players);const draw=engine.matchesFromPairs(state.pairs);state.matches=draw.first;notify(draw.byes?'Sorteo listo: '+draw.byes+' pases automáticos (pendientes de aprobación real).':'Sorteo realizado.');show();}catch(err){notify(err.message);}});
-el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.round=1;notify('Laboratorio reiniciado.');show();});
+el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.events={};state.round=1;notify('Laboratorio reiniciado.');show();});
 show();
 })();
