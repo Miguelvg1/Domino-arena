@@ -12,6 +12,17 @@ const {createServer,createStore}=require('./http-adapter.cjs');
   const payload={operationId:'operation_123',expectedRevision:0,snapshot:{schemaVersion:1,tournament:'Titanes',matches:[{teamA:'A',teamB:'B',scoreA:200,scoreB:40}],adminToken:'secret'}};
   const put=(token,data)=>fetch(url,{method:'PUT',headers:{authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify(data)});
   assert.equal((await put('lab-viewer',payload)).status,403);
+  // Even a permissive storage authorization cannot grant TV write access.
+  const {createServer:makeServer}=require('./http-adapter.cjs');
+  const permissive=makeServer({store:createStore({authorizeRead:()=>true,authorizeWrite:()=>true}),authenticate:req=>req.headers.authorization==='Bearer tv-device'?{role:'editor',deviceType:'tv'}:'viewer'});
+  await new Promise(resolve=>permissive.listen(0,'127.0.0.1',resolve));
+  try{
+   const tvUrl='http://127.0.0.1:'+permissive.address().port+'/api/tournaments/demo/snapshot';
+   for(const authorization of ['Bearer tv-device','Bearer lab-viewer']){
+    const response=await fetch(tvUrl,{method:'PUT',headers:{authorization,'content-type':'application/json'},body:JSON.stringify(payload)});
+    assert.equal(response.status,403);
+   }
+  }finally{await new Promise(resolve=>permissive.close(resolve));}
   const created=await put('lab-editor',payload);assert.equal(created.status,200);
   const first=await created.json();assert.equal(first.revision,1);assert.equal(first.snapshot.adminToken,undefined);
   assert.equal((await put('lab-editor',payload)).status,200);
