@@ -13,7 +13,7 @@ permissions:
 jobs:
   android-tv:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -61,3 +61,21 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
+      - name: Exercise app with Android TV emulator and D-pad
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: android-tv
+          arch: x86_64
+          profile: tv_1080p
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          emulator-boot-timeout: 600
+          script: |
+            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell monkey -p com.titanesdomino.tvtest 1
+            sleep 10
+            adb shell input keyevent KEYCODE_DPAD_DOWN
+            adb shell input keyevent KEYCODE_DPAD_RIGHT
+            adb shell input keyevent KEYCODE_DPAD_CENTER
+            adb shell pidof com.titanesdomino.tvtest
+            adb logcat -d -t 500 | grep -qv 'FATAL EXCEPTION'
