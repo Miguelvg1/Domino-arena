@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict');
+const {createStore}=require('./snapshot-store.cjs');
+assert.throws(()=>createStore(),/Authorization/);
+const store=createStore({authorizeRead:p=>p==='viewer'||p==='editor',authorizeWrite:p=>p==='editor'});
+const snapshot={schemaVersion:1,tournament:'Titanes',matches:[{teamA:'A',teamB:'B',scoreA:210,scoreB:0,adminToken:'secret'}],events:[],bracket:[],adminToken:'secret'};
+assert.throws(()=>store.publish({id:'final',principal:'viewer',operationId:'operation_1',expectedRevision:0,snapshot}),/Forbidden/);
+const first=store.publish({id:'final',principal:'editor',operationId:'operation_1',expectedRevision:0,snapshot});
+assert.equal(first.revision,1);
+assert.equal(first.snapshot.adminToken,undefined);
+assert.equal(first.snapshot.matches[0].adminToken,undefined);
+assert.equal(store.read({id:'final',principal:'viewer'}).snapshot.matches[0].scoreA,210);
+assert.throws(()=>store.read({id:'final',principal:'anonymous'}),/Forbidden/);
+assert.equal(store.publish({id:'final',principal:'editor',operationId:'operation_1',expectedRevision:0,snapshot}).revision,1);
+assert.throws(()=>store.publish({id:'final',principal:'editor',operationId:'operation_2',expectedRevision:0,snapshot}),/Revision conflict/);
+assert.equal(store.publish({id:'final',principal:'editor',operationId:'operation_2',expectedRevision:1,snapshot}).revision,2);
+const copy=store.read({id:'final',principal:'viewer'});copy.snapshot.matches[0].scoreA=999;
+assert.equal(store.read({id:'final',principal:'viewer'}).snapshot.matches[0].scoreA,210);
+console.log('Laboratory snapshot store checks passed');
