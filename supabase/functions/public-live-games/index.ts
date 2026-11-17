@@ -52,7 +52,7 @@ Deno.serve(async (request: Request) => {
   const matches = (games || []).map((game, index) => {
     const assigned = players.filter((player) => player.game_id === game.id);
     const pairLabel = (team: string) => assigned
-      .filter((player) => String(player.team || "").toLowerCase() === team)
+      .filter((player) => String(player.team || "").toUpperCase() === team.toUpperCase())
       .map((player) => {
         const member = player.members || {};
         return text(member.nickname, 40) || text(member.full_name, 40);
