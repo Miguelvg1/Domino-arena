@@ -2,34 +2,33 @@
 Fecha de revisión: 2026-11-17
 
 ## Objetivo
-Hacer que Titanes Dominó aparezca como instalable en Google Play para televisores Android TV/Google TV compatibles, sin cambiar la experiencia móvil ni tocar la aplicación oficial.
+Hacer que Titanes Dominó pueda instalarse en Android TV/Google TV y ofrecer una pantalla pública para seguir partidas en curso. El televisor es un visor de solo lectura: muestra parejas, mesa, puntos y líder de cada partida.
 
 ## Estado verificado
 - Aplicación Google Play: `com.titanesdomino.app`.
 - Proyecto Capacitor: `appId=com.titanesdomino.app`, `webDir=www`.
-- El código web real sí está en la raíz del repositorio: `index.html` y los scripts cargados desde la raíz. La app usa Supabase con una clave publicable y contiene operaciones de escritura para partidas.
-- La interfaz web actual no presenta un modo TV y sus scripts no implementan navegación específica para mando D-pad.
-- La rama contiene un prototipo TV aislado con datos ficticios y contratos de snapshot. El endpoint real y el backend de lectura autorizada no están configurados.
-- El workflow Android TV genera un paquete de prueba separado, `com.titanesdomino.tvtest`, con la interfaz de demostración. No sobrescribe la instalación oficial.
-- El APK de demostración superó un smoke test en emulador Android TV API 34: instalación, inicio y navegación D-pad sin cierre fatal. El artefacto de prueba se publicó en GitHub Actions; expiración indicada por GitHub: 24 de noviembre de 2026.
-- No se ha generado un APK de TV con la app web real ni un AAB listo para Play. Tampoco está verificada la disponibilidad del listing en Play Console para televisores.
+- El código web real está en la raíz del repositorio: `index.html` y sus scripts. Usa Supabase con una clave publicable y contiene operaciones de anotación, corrección y cierre.
+- La interfaz móvil no cuenta con una experiencia de TV ni navegación D-pad completa.
+- Se preparó un visor TV independiente, sin credenciales ni escrituras. Ahora muestra una pantalla de partidas activas, parejas, marcadores, líder, meta y estado de demostración.
+- Se conserva una ruta de datos ficticios marcada como demostración. No existe todavía un endpoint conectado a partidas reales.
+- El visor espera un snapshot HTTPS sanitizado, con revisión creciente del servidor, y consulta cada 10 segundos. Debe empaquetarse la URL del endpoint; no se envían credenciales desde el televisor.
+- El workflow Android TV genera una prueba separada `com.titanesdomino.tvtest`; no sobrescribe la instalación oficial. El smoke test de emulador API 34 validó instalación, inicio y navegación D-pad del prototipo.
+- No se ha generado un AAB de TV con partidas reales ni está confirmada la disponibilidad del listing en Play Console para televisores.
 
-## Riesgos técnicos identificados
-- Empaquetar la app móvil completa sin cambios expondría en TV acciones de escritura de partidas y una interfaz no optimizada para D-pad.
-- El cliente usa servicios de producción; no se debe probar una APK completa navegando funciones que escriban en partidas reales.
-- El visor TV de torneo puede conectarse solo después de disponer de un endpoint de lectura autorizado y datos aislados. No incluir claves de servicio ni permisos de escritura en el cliente de TV.
+## Seguridad de datos
+- El feed público debe exponer solo mesa, nombres visibles de pareja, puntajes, meta y estado actual.
+- Nunca mostrar ni devolver PIN, teléfonos, chat, perfil, historial o identificadores internos.
+- El visor no debe incluir acciones de anotación/corrección/cierre ni conectarse con permiso de escritura.
+- Crear y probar el endpoint en el proyecto de laboratorio. No relajar RLS ni hacer cambios a producción para habilitar lectura pública.
 
 ## Próximas tareas
-1. Diseñar una entrada/modo TV de solo lectura, sin botones de anotación o cierre de partidas ordinarias, con foco visible y navegación completa por D-pad.
-2. Definir una API de snapshot TV autorizada y aislada. No habilitar lectura anónima ni cambiar RLS de producción para facilitar la prueba.
-3. Mantener el paquete de laboratorio con ID distinto al oficial; ejecutar pruebas de foco, arranque, red y resolución en emulador y TV física.
-4. Proveer branding final: icono y banner Android TV 320×180 px.
-5. Generar AAB de lanzamiento firmado con la cuenta del propietario, revisar catálogo de dispositivos y habilitar factor de forma TV en Play Console tras pruebas.
-6. Mantener la app Android móvil disponible; el manifiesto TV debe añadir `LEANBACK_LAUNCHER` y declarar touchscreen opcional sin eliminar `LAUNCHER`.
-7. No publicar ni modificar permisos/RLS/producción sin autorización expresa tras pruebas.
+1. Revisar las políticas y la estructura del proyecto de laboratorio para `live_games_feed`, `games` y `game_players`.
+2. Implementar una función/endpoint de snapshot de solo lectura y de campos permitidos; validar que la revisión cambia con cada anotación.
+3. Configurar ese endpoint en el paquete de prueba y validar datos, refresco, desconexión/reconexión y D-pad en emulador.
+4. Probar en un televisor Android físico; la instalación de la APK deberá ser de prueba y el feed solo mostrará datos públicos.
+5. Proveer branding final: icono y banner Android TV 320×180 px.
+6. Generar AAB con firma de la cuenta propietaria, comprobar dispositivos compatibles y habilitar el factor de forma TV en Play Console tras las pruebas.
+7. Preparar y firmar paquete Tizen `.wgt`, probarlo en TV Samsung real y publicarlo por Samsung Apps tras completar los requisitos de desarrollador.
 
-## Pendiente Samsung Tizen
-Tizen requiere su propio paquete web firmado `.wgt`, pruebas con control remoto y certificado/perfil Samsung. No existe un paquete publicado en Samsung Apps.
-
-## Organización del torneo
-El módulo de torneos permanece en segunda etapa. Sus marcadores deben seguir separados de las partidas ordinarias.
+## Entrega inmediata
+El visor read-only está implementado con datos de demostración y cliente preparado para el contrato HTTPS. La conexión real al feed, validación de políticas de laboratorio, prueba en televisor físico y publicación siguen pendientes. El módulo de torneos va en segunda etapa.
