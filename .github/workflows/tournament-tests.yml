@@ -21,4 +21,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate tournament engine
-        run: node tournaments/tournament-engine.test.cjs
+        run: |
+          node tournaments/tournament-engine.test.cjs
+          node tournaments/shared/tv-snapshot.test.cjs
