@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/tournaments/:id/snapshot",
+      "destination": "/api/index.cjs"
+    }
+  ]
+}
