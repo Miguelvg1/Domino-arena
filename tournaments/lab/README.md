@@ -8,7 +8,7 @@ Ejecutar en un servidor Node.js 22 con acceso de red a PostgreSQL (no ejecutar e
 
 ```sh
 cd tournaments/lab
-npm ci
+npm install --ignore-scripts
 DATABASE_URL='postgresql://...' LAB_EDITOR_TOKEN='...' LAB_VIEWER_TOKEN='...' npm start
 ```
 
@@ -28,7 +28,7 @@ La conexión PostgreSQL debe utilizar un usuario con permisos limitados exclusiv
 ## Pruebas
 
 ```sh
-npm ci
+npm install --ignore-scripts
 npm test
 node postgres-store.test.cjs
 node http-adapter.test.cjs
