@@ -13,7 +13,7 @@ function fitGrid(count){
 function announceNotice(notice){
  const banner=$('liza-notice');banner.textContent=notice;banner.hidden=false;
  if(!voiceEnabled||!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance)return;
- try{window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(notice);utterance.lang='es-DO';utterance.rate=.96;const spanish=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('es'));if(spanish)utterance.voice=spanish;speechSynthesis.speak(utterance);}catch(_){/* El aviso visual sigue disponible si la TV no ofrece voz. */}
+ try{const utterance=new SpeechSynthesisUtterance(notice);utterance.lang='es-DO';utterance.rate=.96;const spanish=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('es'));if(spanish)utterance.voice=spanish;speechSynthesis.speak(utterance);}catch(_){/* El aviso visual sigue disponible si la TV no ofrece voz. */}
 }
 function consumeNotices(events){
  const notices=Array.isArray(events)?events:[];

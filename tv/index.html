@@ -20,11 +20,13 @@
   <div class="toolbar">
     <button id="fullscreen" type="button">⛶ Pantalla completa</button>
     <button id="refresh" type="button">↻ Actualizar</button>
+    <button id="voice-toggle" type="button" aria-pressed="false">🔈 Activar voz</button>
     <span id="clock"></span>
   </div>
   <div id="updated" aria-live="polite"></div>
   <section id="matches" class="matches" aria-label="Marcadores de las partidas activas"></section>
 </main>
+<aside id="liza-notice" role="status" aria-live="assertive" aria-atomic="true" hidden></aside>
 <footer>MARCADOR PÚBLICO · SOLO LECTURA · No permite anotar ni modificar partidas</footer>
 <script src="config.js"></script>
 <script src="tv.js"></script>
