@@ -78,4 +78,4 @@ jobs:
             adb shell input keyevent KEYCODE_DPAD_RIGHT
             adb shell input keyevent KEYCODE_DPAD_CENTER
             adb shell pidof com.titanesdomino.tvtest
-            adb logcat -d -t 500 | grep -qv 'FATAL EXCEPTION'
+            if adb logcat -d -t 500 | grep -q 'FATAL EXCEPTION'; then exit 1; fi
