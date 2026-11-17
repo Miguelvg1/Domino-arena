@@ -20,11 +20,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate tournament engine
+      - name: Check browser JavaScript syntax
         run: |
-          node tournaments/tournament-engine.test.cjs
-          node tournaments/scoring.test.cjs
-          node tournaments/shared/tv-snapshot.test.cjs
-          node tournaments/shared/build-snapshot.test.cjs
-          node tournaments/shared/local-preview-sync.test.cjs
-          node tournaments/shared/remote-tv-client.test.cjs
+          node --check tournaments/mobile/mobile.js
+          node --check tournaments/tv-preview/viewer.js
+          node --check tournaments/shared/remote-tv-client.js
+      - name: Tournament bracket
+        run: node tournaments/tournament-engine.test.cjs
+      - name: Tournament scoring
+        run: node tournaments/scoring.test.cjs
+      - name: TV snapshot contract
+        run: node tournaments/shared/tv-snapshot.test.cjs
+      - name: TV snapshot builder
+        run: node tournaments/shared/build-snapshot.test.cjs
+      - name: Local TV preview synchronization
+        run: node tournaments/shared/local-preview-sync.test.cjs
+      - name: Remote TV synchronization
+        run: node tournaments/shared/remote-tv-client.test.cjs
