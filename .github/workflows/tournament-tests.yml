@@ -1,0 +1,24 @@
+name: Tournament engine checks
+on:
+  push:
+    branches:
+      - feature/torneos-tv-diciembre-2026
+    paths:
+      - 'tournaments/**'
+      - '.github/workflows/tournament-tests.yml'
+  pull_request:
+    paths:
+      - 'tournaments/**'
+      - '.github/workflows/tournament-tests.yml'
+permissions:
+  contents: read
+jobs:
+  tournament:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate tournament engine
+        run: node tournaments/tournament-engine.test.cjs
