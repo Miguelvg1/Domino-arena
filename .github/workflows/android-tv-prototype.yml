@@ -61,6 +61,8 @@ jobs:
         run: |
           mkdir -p www
           cp tv/index.html tv/tv.css tv/tv.js tv/config.js www/
+          mkdir -p www/tournaments
+          cp -R tournaments/shared tournaments/tv-preview www/tournaments/
       - name: Assign test-only Android package ID
         run: |
           node -e 'const fs=require("node:fs"); const p="capacitor.config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.appId="com.titanesdomino.tvtest"; c.appName="Titanes TV Prueba"; fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");'
@@ -77,6 +79,8 @@ jobs:
           grep -q 'com.titanesdomino.tvtest' android/app/build.gradle
           test -s android/app/src/main/res/drawable-nodpi/tv_banner.png
           test -s www/index.html
+          test -s www/tournaments/tv-preview/index.html
+          test -s www/tournaments/shared/tv-snapshot.js
       - name: Build Android TV debug APK for internal testing
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
