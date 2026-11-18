@@ -32,3 +32,9 @@ button:focus,button:focus-visible{outline:4px solid var(--gold);outline-offset:3
 .empty{grid-column:1/-1;align-self:stretch;display:grid;place-items:center;border:1px dashed #45637e;border-radius:16px;padding:1rem;text-align:center;color:var(--muted);font-size:clamp(18px,2vw,32px)}
 footer{flex:0 0 auto;text-align:center;color:var(--muted);font-size:clamp(10px,.82vw,17px);font-weight:800;margin-top:.65vw}
 @media(max-width:800px){body{padding:12px}header{align-items:flex-start;gap:.5rem}#connection{text-align:right}.toolbar{margin:8px 0}.matches{gap:6px}.match{padding:6px}.teams{gap:4px}}
+
+.tv-tournament-connect{flex:0 0 auto;display:flex;align-items:center;gap:clamp(8px,1vw,18px);padding:clamp(6px,.55vw,10px) 0;color:var(--text);font-size:clamp(13px,1.05vw,20px);font-weight:800}
+.tv-tournament-connect input{width:clamp(190px,20vw,340px);padding:clamp(8px,.65vw,12px);border:2px solid var(--line);border-radius:9px;background:#091827;color:#fff;font-size:clamp(15px,1.2vw,23px);font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.tv-tournament-connect button{padding:clamp(8px,.65vw,12px) clamp(12px,1vw,20px);border:1px solid var(--gold);border-radius:9px;background:#183b5d;color:#fff;font-size:clamp(13px,1vw,19px);font-weight:900}
+.tv-tournament-connect :focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+#tournament-error{color:#ffb4ab;font-size:clamp(12px,.9vw,18px)}
