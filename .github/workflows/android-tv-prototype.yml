@@ -8,6 +8,15 @@ on:
       - 'tv/**'
       - 'scripts/enable_android_tv.cjs'
       - '.github/workflows/android-tv-prototype.yml'
+      - 'tournaments/shared/**'
+      - 'tournaments/tv-preview/**'
+  pull_request:
+    paths:
+      - 'tv/**'
+      - 'scripts/enable_android_tv.cjs'
+      - '.github/workflows/android-tv-prototype.yml'
+      - 'tournaments/shared/**'
+      - 'tournaments/tv-preview/**'
 permissions:
   contents: read
 jobs:
@@ -81,6 +90,8 @@ jobs:
           test -s www/index.html
           test -s www/tournaments/tv-preview/index.html
           test -s www/tournaments/shared/tv-snapshot.js
+          grep -q 'tournament-connect' www/index.html
+          grep -q 'tournament-tv-sync' www/tournaments/tv-preview/viewer.js
       - name: Build Android TV debug APK for internal testing
         working-directory: android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
