@@ -7,6 +7,15 @@ const DEMO={schemaVersion:1,updatedAt:new Date().toISOString(),matches:[
 ]};
 const el=id=>document.getElementById(id);
 const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
+document.getElementById('tournament-connect').addEventListener('submit',event=>{
+ event.preventDefault();
+ const input=document.getElementById('tournament-code'),error=document.getElementById('tournament-error');
+ const code=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+ if(!/^[A-HJ-KM-NP-TV-Z0-9]{16}$/.test(code)){error.textContent='El código debe tener 16 letras o números. Revisa los grupos de cuatro.';input.focus();return;}
+ const viewer=new URL('/tournaments/tv-preview/index.html',location.origin);
+ viewer.searchParams.set('endpoint','https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync/'+code);
+ location.href=viewer.href;
+});
 const config=window.TITANES_TV_CONFIG||{};
 const endpoint=typeof config.snapshotUrl==='string'?config.snapshotUrl:'';
 let revision=-1,timer=null,busy=false,lastCount=1,previousMatches=null,voiceEnabled=true,lastNotice='';
