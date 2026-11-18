@@ -112,7 +112,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           emulator-boot-timeout: 600
           script: |
-            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell settings put global package_verifier_enable 0 || true
+            adb shell settings put global verifier_verify_adb_installs 0 || true
+            adb install --no-streaming android/app/build/outputs/apk/debug/app-debug.apk
             adb shell monkey -p com.titanesdomino.tvtest 1
             sleep 10
             adb shell input keyevent KEYCODE_DPAD_DOWN
