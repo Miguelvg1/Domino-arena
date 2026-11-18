@@ -1,23 +1,25 @@
-# Sincronización remota de torneos — contrato seguro (pendiente de backend)
+# Sincronización remota de torneos — laboratorio aislado
 
 ## Estado
-Cliente de lectura remota creado, sin conexión a base de datos ni despliegue. La base de datos del laboratorio rechazó autenticación durante la inspección (28P01); no se modificó producción.
+El backend de prueba está desplegado en el proyecto Supabase de laboratorio; no escribe ni lee las tablas de partidas diarias de producción. La app del organizador envía una vista pública del torneo y la TV solo consulta el snapshot por HTTPS.
 
-## Lectura TV
-El backend deberá ofrecer una lectura autorizada de un **snapshot público** por identificador de torneo. Respuesta:
-```json
-{"revision":42,"snapshot":{"schemaVersion":1,"tournament":"Torneo Titanes","updatedAt":"2026-12-13T17:00:00-04:00","matches":[],"events":[],"bracket":[]}}
-```
-`revision` es entero creciente generado **en el servidor**, no fecha del dispositivo. La TV solo lee; no recibe credenciales administrativas, cédulas, PIN, historial privado ni tokens de servicio. El servidor valida el permiso de visualización y filtra datos.
+## Escritura desde el celular
+- La función `tournament-tv-sync` valida el token contra la autenticación de la app oficial y consulta el perfil del miembro.
+- Solo admite escritura de cuentas activas, no invitadas y con rol `admin` o `directiva`.
+- El token se obtiene de la sesión ya iniciada en la app; no se guarda en la URL ni en un archivo del TV.
+- Cada publicación valida el snapshot, limita tamaño y campos, registra una operación única y compara la revisión anterior dentro de una transacción.
+- Los datos se guardan en `public.tv_tournament_snapshots` y `public.tv_tournament_operations` del proyecto de laboratorio. RLS está activo; los roles `anon` y `authenticated` no tienen permisos de lectura o escritura.
 
-## Escritura móvil
-Cada anotación, anulación o cierre requiere identidad autenticada, autorización de rol por torneo, identificador único de operación (idempotencia), transacción y control de concurrencia. La operación genera una nueva revisión del snapshot en la misma transacción. No se permiten escrituras directas de la TV. No confiar en `actor` enviado por JavaScript.
+## Lectura de TV
+- `GET /functions/v1/tournament-tv-sync/{id}` entrega únicamente mesa, ronda, parejas, puntuación, fotos opcionales, avisos, cuadro, MVP y líder de puntos.
+- El identificador aleatorio de 128 bits evita que se encuentren torneos por enumeración. El enlace es público para quien lo reciba, porque está hecho para proyectar datos al público.
+- No se envían PIN, teléfonos, historial privado ni funciones de edición a la TV.
+- La TV no tiene controles de anotación. Las vistas del torneo actualizan cada cinco segundos y mantienen el último marcador si pierden conexión.
 
-## Actualización
-Preferir suscripción a cambios del snapshot público con RLS, más lectura inicial y refresco de respaldo. Reconexión vuelve a leer la revisión más reciente. La implementación `remote-tv-client.js` ya gestiona revisiones monotónicas y refresco periódico, pero todavía necesita un adaptador de backend real.
+## Pruebas y límite actual
+- Las pruebas automáticas del transporte verifican sesión de organizador, GET público sin credenciales y recuperación de conflicto de revisión.
+- El paquete queda en rama y en vista previa. Falta comprobar una anotación real entre dos dispositivos con una cuenta de Presidencia/directiva; no se debe declarar validada hasta completar esa prueba.
+- La pantalla TV de la vista previa se abre desde el enlace compartible que genera el módulo. El APK de TV que ya probaste todavía muestra el marcador general; no se ha integrado esta ruta de torneo al APK.
 
-## Aislamiento
-Crear tablas específicas de torneos en laboratorio primero, sin alterar tablas de partidas ordinarias ni vistas oficiales. Auditar RLS y permisos antes de activar Realtime. No habilitar lectura anónima por defecto.
-
-## Visor remoto (implementado solo en frontend)
-La página `tournaments/tv-preview/index.html` admite `?endpoint=/api/tournaments/ID/snapshot`. Por seguridad acepta exclusivamente HTTPS, el mismo origen web y rutas que empiecen con `/api/tournaments/`, sin parámetros ni credenciales en la URL del endpoint. Solicita el snapshot cada 10 segundos, con límite de espera de 8 segundos, y conserva el último marcador cuando falla la red. Sin parámetro `endpoint` mantiene la demostración local entre pestañas. **La ruta API todavía no existe**: el parámetro no activa la sincronización hasta desplegar el backend protegido.
+## Producción
+El módulo no modifica las partidas oficiales. Integrarlo a la aplicación Google Play requiere revisar el PR, probar el flujo completo y publicar una nueva versión. La app de Play Store no cambia por el despliegue de este proyecto de laboratorio.
