@@ -46,6 +46,7 @@ function render(raw){
  grid.dataset.count=String(s.matches.length);fitGrid(s.matches.length);
  $('bracket').replaceChildren(...s.bracket.map(b=>el('li',typeof b==='string'?b:b.label)));consumeNotices(s.events);
 }
+$('back-tv').addEventListener('click',()=>{window.location.href=new URL('/index.html',window.location.origin).href;});
 const voiceButton=$('voice-toggle');
 if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){voiceEnabled=false;voiceButton.disabled=true;voiceButton.setAttribute('aria-pressed','false');voiceButton.title='Esta TV no ofrece voz del navegador; las notificaciones seguirán apareciendo en pantalla.';voiceButton.textContent='Voz no disponible';}
 else{voiceButton.setAttribute('aria-pressed','true');voiceButton.textContent='🔊 Voz automática activa';}
