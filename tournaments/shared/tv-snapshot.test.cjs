@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');const {validate}=require('./tv-snapshot.js');
 const result=validate({schemaVersion:1,tournament:'Torneo',matches:[{table:1,round:'Final',teamA:'A',teamB:'B',scoreA:220,scoreB:190,secret:'hidden'}],events:[],bracket:['Final'],adminToken:'secret'});
-assert.equal(result.matches[0].scoreA,220);assert.equal(result.matches[0].secret,undefined);assert.equal(result.adminToken,undefined);
+assert.equal(result.matches[0].scoreA,220);assert.deepEqual(result.matches[0].teamAPlayers,[]);assert.equal(result.matches[0].secret,undefined);assert.equal(result.adminToken,undefined);assert.equal(result.leaders.mvp,null);
 assert.equal(validate({schemaVersion:1,matches:[{scoreA:10001,scoreB:-1}],events:[],bracket:[]}).matches[0].scoreA,0);
-assert.throws(()=>validate({schemaVersion:2,matches:[]}));
+const withPhoto=validate({schemaVersion:1,matches:[{table:1,teamAPlayers:[{name:'A',photo:'data:image/jpeg;base64,AAAA'},{name:'B',photo:'https://invalid.example/p.jpg'}]}],leaders:{mvp:{name:'A',average:92.5},points:{name:'B',value:200}}});assert.equal(withPhoto.matches[0].teamAPlayers[0].photo,'data:image/jpeg;base64,AAAA');assert.equal(withPhoto.matches[0].teamAPlayers[1].photo,'');assert.equal(withPhoto.leaders.mvp.average,92.5);assert.throws(()=>validate({schemaVersion:2,matches:[]}));
 assert.equal(validate({schemaVersion:1,matches:[{scoreA:290,scoreB:190,table:1}]}).matches[0].scoreA,290);
 console.log('TV snapshot contract checks passed');
