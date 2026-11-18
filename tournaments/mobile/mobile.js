@@ -5,6 +5,8 @@ const engine=window.TitanesTournament,scoring=window.TitanesTournamentScoring;
 const preview=window.TitanesLocalPreviewSync.create(()=>{});
 const STORAGE_KEY='titanes_tournament_lab_v1';
 const TV_VIEWER_BASE='https://titanes-domino-app-v21-git-feature-to-4570ea-titanes-domino-app.vercel.app/tournaments/tv-preview/index.html';
+const TV_CODE_ALPHABET='0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+function createTournamentTvCode(){const bytes=crypto.getRandomValues(new Uint8Array(16));return Array.from(bytes,byte=>TV_CODE_ALPHABET[byte&31]).join('');}
 const remote=window.TitanesRemoteTournamentSync.create({
  baseUrl:'https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync',
  getAccessToken:async()=>{if(!window.TitanesTournamentAuth)await new Promise(resolve=>window.addEventListener('titanes-auth-ready',resolve,{once:true}));return window.TitanesTournamentAuth.getAccessToken();},
@@ -56,15 +58,16 @@ function makeScoreForm(match,pairId){
 }
 function remoteEndpoint(){return 'https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync/'+state.remoteTournamentId;}
 function renderTvLink(){
- const link=el('tv-link'),copy=el('copy-tv-link'),status=el('remote-status');
+ const link=el('tv-link'),copy=el('copy-tv-link'),status=el('remote-status'),code=el('remote-code');
  if(!link||!copy||!state.remoteTournamentId)return;
+ if(code)code.textContent=(state.remoteTournamentId.match(/.{1,4}/g)||[state.remoteTournamentId]).join('-');
  const url=new URL(TV_VIEWER_BASE);url.searchParams.set('endpoint',remoteEndpoint());link.href=url.href;link.hidden=false;copy.hidden=false;
  if(!state.remoteRevision&&status)status.textContent='Preparando transmisión segura…';
 }
 el('connect-tv').addEventListener('click',async()=>{
  try{
   if(!state.matches.some(match=>match.type==='match')){notify('Primero sortea las parejas y prepara los encuentros.');return;}
-  if(!state.remoteTournamentId){state.remoteTournamentId=crypto.randomUUID().replace(/-/g,'');state.remoteRevision=0;persistState();}
+  if(!state.remoteTournamentId){state.remoteTournamentId=createTournamentTvCode();state.remoteRevision=0;persistState();}
   el('remote-status').textContent='Conectando con la cuenta de Presidencia o directiva…';
   const snapshot=window.TitanesBuildTvSnapshot.build(state);
   const revision=await remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0);
