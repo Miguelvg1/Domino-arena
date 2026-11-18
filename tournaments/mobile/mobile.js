@@ -4,13 +4,14 @@
 const engine=window.TitanesTournament,scoring=window.TitanesTournamentScoring;
 const preview=window.TitanesLocalPreviewSync.create(()=>{});
 const STORAGE_KEY='titanes_tournament_lab_v1';
-const DEFAULT_STATE={name:'Torneo Titanes',players:[],pairs:[],matches:[],events:{},notifications:[],round:1,phase:'registration',champion:null};
+const DEFAULT_STATE={name:'Torneo Titanes',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null};
 const state=(()=>{try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(saved&&Array.isArray(saved.players)&&Array.isArray(saved.pairs)&&Array.isArray(saved.matches)&&saved.events&&typeof saved.events==='object')return {...DEFAULT_STATE,...saved};}catch(_){}return {...DEFAULT_STATE};})();
 function persistState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(error){console.warn('No se pudo guardar el torneo en este dispositivo:',error);}}
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
 function pairName(id){const pair=state.pairs.find(p=>p.id===id);return pair?pair.players.map(p=>p.name).join(' / '):id;}
+function archiveRound(){state.completedMatches=state.completedMatches||[];for(const match of state.matches){if(match.type==='match'&&match.winner&&!state.completedMatches.some(saved=>saved.id===match.id))state.completedMatches.push(match);}}
 function notify200(pairId){notify('¡'+pairName(pairId)+' llegó a 200! Confirma el cierre del encuentro.');try{if(navigator.vibrate)navigator.vibrate([140,70,140]);}catch(_){}}
 function makeScoreForm(match,pairId){
  const form=element('form');form.className='score-form';
@@ -19,21 +20,26 @@ function makeScoreForm(match,pairId){
  Object.entries(scoring.POINT_TYPES).forEach(([key,type])=>{const option=element('option');option.value=key;option.textContent=type.label+(type.points?' +'+type.points:' (1–250)');kind.append(option);});
  form.append(kind);
  const input=element('input');input.type='number';input.min='1';input.max='250';input.step='1';input.required=true;input.placeholder='Puntos';input.setAttribute('aria-label','Cantidad de puntos');form.append(input);
- const updateInput=()=>{const value=scoring.pointsFor(kind.value);const manual=value===null;input.readOnly=!manual;input.value=manual?'':String(value);input.placeholder=manual?'Puntos (1–250)':'Puntos fijos';input.classList.toggle('fixed-points',!manual);};
+ const responsible=element('select');responsible.className='responsible-player';responsible.setAttribute('aria-label','Jugador responsable del chivo, pase o multa');
+ const updateResponsible=()=>{const required=scoring.RESPONSIBLE_TYPES.has(kind.value);responsible.hidden=!required;responsible.required=required;responsible.replaceChildren();const placeholder=element('option','Selecciona quién cometió la falta');placeholder.value='';responsible.append(placeholder);const opponentId=pairId===match.pairA?match.pairB:match.pairA;const opponent=state.pairs.find(p=>p.id===opponentId);for(const player of opponent?.players||[]){const option=element('option',player.name);option.value=player.id;responsible.append(option);}};
+ form.append(responsible);
+ const updateInput=()=>{const value=scoring.pointsFor(kind.value);const manual=value===null;input.readOnly=!manual;input.value=manual?'':String(value);input.placeholder=manual?'Puntos (1–250)':'Puntos fijos';input.classList.toggle('fixed-points',!manual);updateResponsible();};
  kind.addEventListener('change',updateInput);updateInput();
  const submit=element('button','Anotar puntos');submit.type='submit';form.append(submit);
  form.addEventListener('submit',event=>{
   event.preventDefault();
   try{
-   const before=scoring.score(match,state.events[match.id]||[]);
-   const points=scoring.pointsFor(kind.value)??Number(input.value);
-   state.events[match.id]=scoring.add(match,state.events[match.id]||[],pairId,points,kind.value,'anotador-demo');
-   const after=scoring.score(match,state.events[match.id]);
-   const tableNumber=state.matches.filter(m=>m.type==='match').findIndex(m=>m.id===match.id)+1;
-   const cause=scoring.POINT_TYPES[kind.value].label;
-   const notice='Liza actualizada en Mesa '+tableNumber+': '+pairName(pairId)+' anotó '+points+' puntos por '+cause+'. Marcador '+after[match.pairA]+' a '+after[match.pairB]+'.';
+   const before=scoring.score(match,state.events[match.id]||[]),points=scoring.pointsFor(kind.value)??Number(input.value);
+   const responsiblePlayerId=responsible.hidden?null:responsible.value;
+   state.events[match.id]=scoring.add(match,state.events[match.id]||[],pairId,points,kind.value,'organizador-local',responsiblePlayerId);
+   const after=scoring.score(match,state.events[match.id]),tableNumber=state.matches.filter(m=>m.type==='match').findIndex(m=>m.id===match.id)+1;
+   const cause=scoring.POINT_TYPES[kind.value].label,offender=state.players.find(p=>p.id===responsiblePlayerId);
+   let notice='Liza actualizada en Mesa '+tableNumber+': '+pairName(pairId)+' anotó '+points+' puntos por '+cause+'. Marcador '+after[match.pairA]+' a '+after[match.pairB]+'.';
+   if(kind.value==='chivo')notice='¡CHIVO! '+(offender?.name||'Jugador sin identificar')+' cometió chivo. +100 puntos para '+pairName(pairId)+'. Marcador '+after[match.pairA]+' a '+after[match.pairB]+'.';
+   if(kind.value==='pase_con_ficha')notice='¡WOW, QUÉ DIFÍCIL! '+(offender?.name||'Jugador sin identificar')+' pasó con ficha. +100 puntos para '+pairName(pairId)+'. Marcador '+after[match.pairA]+' a '+after[match.pairB]+'.';
+   if(kind.value==='multa')notice='¡MULTA! '+(offender?.name||'Jugador sin identificar')+' cometió una multa. +30 puntos para '+pairName(pairId)+'. Marcador '+after[match.pairA]+' a '+after[match.pairB]+'.';
    const annotation=state.events[match.id][state.events[match.id].length-1];
-   state.notifications.push({id:match.id+':'+annotation.id,label:notice,points,createdAt:annotation.createdAt});
+   state.notifications.push({id:match.id+':'+annotation.id,label:notice,points,table:tableNumber,createdAt:annotation.createdAt});
    if(state.notifications.length>20)state.notifications=state.notifications.slice(-20);
    const hit=[match.pairA,match.pairB].find(id=>before[id]<scoring.TARGET&&after[id]>=scoring.TARGET);
    if(hit){notify200(hit);state.notifications[state.notifications.length-1].label+=' '+pairName(hit)+' llegó a 200; cierre pendiente de confirmación.';}else notify(notice);
@@ -43,11 +49,13 @@ function makeScoreForm(match,pairId){
  return form;
 }
 function show(){
+ state.completedMatches=state.completedMatches||[];
+ state.leaderboard=scoring.rankPlayers([...state.completedMatches,...state.matches],state.pairs,state.events);
  persistState();
  try{preview.publish(window.TitanesBuildTvSnapshot.build(state));}catch(error){console.warn('Vista TV no disponible:',error.message);}
  el('count').textContent=state.players.length+' jugadores inscritos';
  el('draw').disabled=state.players.length<8||state.players.length%2!==0||state.pairs.length>0;
- const players=el('players');players.replaceChildren(...state.players.map(p=>element('li',p.name)));
+ const players=el('players');players.replaceChildren(...state.players.map(p=>{const li=element('li');if(p.photo){const img=element('img');img.src=p.photo;img.alt='';img.className='player-photo-thumb';li.append(img);}li.append(element('span',p.name));return li;}));
  const pairs=el('pairs');pairs.replaceChildren(...state.pairs.map(p=>element('li',p.players.map(x=>x.name).join(' / '))));
  const matches=el('matches');matches.replaceChildren();
  for(const match of state.matches){
@@ -97,26 +105,41 @@ function show(){
   result.append(element('p','🥈 Subcampeones: '+pairName(state.matches[0].winner===state.matches[0].pairA?state.matches[0].pairB:state.matches[0].pairA)));
   result.append(element('p','🥉 Tercer lugar: '+pairName(state.matches[1].winner)));matches.append(result);
  }
+ if(state.leaderboard.length){
+  const mvp=state.leaderboard[0],pointsLeader=[...state.leaderboard].sort((a,b)=>b.individualPoints-a.individualPoints||b.average-a.average)[0];
+  const award=element('section');award.className='tournament-result';
+  award.append(element('h2',(state.phase==='medals'&&state.matches.length===2&&state.matches.every(m=>m.winner)?'👑 MVP del torneo':'👑 MVP provisional')));
+  award.append(element('p',mvp.name+' · Average Titanes '+mvp.average.toFixed(2)+'% · '+mvp.gamesWon+'/'+mvp.gamesPlayed+' partidas ganadas'));
+  if(mvp.photo){const img=element('img');img.src=mvp.photo;img.alt='Foto de '+mvp.name;img.className='mvp-photo';award.prepend(img);}
+  award.append(element('p','🎯 Líder individual en puntos: '+pointsLeader.name+' · '+pointsLeader.individualPoints.toFixed(1)+' puntos'));
+  matches.append(award);
+ }
  if(state.phase!=='medals'&&state.matches.length&&state.matches.every(m=>m.winner)&&state.matches.some(m=>m.type==='match')){
   const next=element('button','Preparar siguiente ronda');next.className='primary-action';
   next.addEventListener('click',()=>{try{
-   if(state.matches.length===2){const finals=engine.medalMatches(state.matches);state.matches=[finals.final,finals.third];state.phase='medals';notify('Final y tercer lugar preparados.');}
-   else{state.round++;state.matches=engine.nextRound(state.matches,'ronda-'+state.round);state.phase='elimination';notify('Siguiente ronda preparada.');}
+   if(state.matches.length===2){archiveRound();const finals=engine.medalMatches(state.matches);state.matches=[finals.final,finals.third];state.phase='medals';notify('Final y tercer lugar preparados.');}
+   else{archiveRound();state.round++;state.matches=engine.nextRound(state.matches,'ronda-'+state.round);state.phase='elimination';notify('Siguiente ronda preparada.');}
    show();
   }catch(error){notify(error.message);}});
   matches.append(next);
  }
 }
-el('register').addEventListener('submit',event=>{
- event.preventDefault();if(state.pairs.length){notify('Reinicia el laboratorio para modificar inscritos.');return;}
+async function compressPhoto(file){
+ if(!file)return '';if(!file.type||!file.type.startsWith('image/'))throw Error('El archivo debe ser una imagen.');if(file.size>8*1024*1024)throw Error('La foto debe pesar menos de 8 MB.');
+ const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('No se pudo leer la foto.'));reader.readAsDataURL(file);});
+ const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('La foto no se pudo abrir.'));img.src=data;});
+ const canvas=document.createElement('canvas'),size=64,scale=Math.min(size/image.width,size/image.height);canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return canvas.toDataURL('image/jpeg',.55);
+}
+el('register').addEventListener('submit',async event=>{
+ event.preventDefault();if(state.pairs.length){notify('Reinicia el torneo para modificar inscritos.');return;}
  const name=el('name').value.trim();if(name.length<2)return;
  if(state.players.some(p=>p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){notify('Ese nombre ya está inscrito.');return;}
- state.players.push({id:'player-'+(state.players.length+1),name});el('name').value='';notify('Jugador agregado.');show();
+ try{const photo=await compressPhoto(el('photo').files[0]);state.players.push({id:'player-'+(Date.now())+'-'+(state.players.length+1),name,photo});el('name').value='';el('photo').value='';notify('Jugador agregado.');show();}catch(error){notify(error.message);}
 });
 el('draw').addEventListener('click',()=>{try{
  state.pairs=engine.pairPlayers(state.players);const draw=engine.matchesFromPairs(state.pairs);state.matches=draw.first;state.phase='elimination';
  notify(draw.byes?'Sorteo listo: '+draw.byes+' pases automáticos pendientes de aprobación.':'Sorteo realizado.');show();
 }catch(error){notify(error.message);}});
-el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.events={};state.notifications=[];state.round=1;state.phase='registration';state.champion=null;notify('Laboratorio reiniciado.');show();});
+el('reset').addEventListener('click',()=>{if(!window.confirm('¿Borrar los datos de este laboratorio?'))return;state.players=[];state.pairs=[];state.matches=[];state.completedMatches=[];state.leaderboard=[];state.events={};state.notifications=[];state.round=1;state.phase='registration';state.champion=null;notify('Laboratorio reiniciado.');show();});
 show();
 })();
