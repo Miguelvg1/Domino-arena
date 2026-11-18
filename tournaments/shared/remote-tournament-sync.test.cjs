@@ -36,7 +36,7 @@ const response=(body,status=200)=>new Response(JSON.stringify(body),{status,head
 
  const missing=create({baseUrl:'https://lab.example/functions/v1/tournament-tv-sync',getAccessToken:async()=>null});
  await assert.rejects(()=>missing.publish('a'.repeat(32),{schemaVersion:1,matches:[]},0),/Inicia sesión/);
- assert.throws(()=>create({baseUrl:'http://lab.example',getAccessToken:async()=>''}),/HTTPS/);
+ assert.throws(()=>create({baseUrl:'http://lab.example',getAccessToken:async()=>''}),/inseguro/);
  client.close();missing.close();
  global.fetch=originalFetch;
  console.log('Remote tournament transport: organizer authorization, read-only TV GET and revision conflict recovery passed.');
