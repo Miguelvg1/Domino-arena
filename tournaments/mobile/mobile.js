@@ -4,6 +4,7 @@
 const engine=window.TitanesTournament,scoring=window.TitanesTournamentScoring;
 const preview=window.TitanesLocalPreviewSync.create(()=>{});
 const STORAGE_KEY='titanes_tournament_lab_v1';
+const TV_VIEWER_BASE='https://titanes-domino-app-v21-git-feature-to-4570ea-titanes-domino-app.vercel.app/tournaments/tv-preview/index.html';
 const remote=window.TitanesRemoteTournamentSync.create({
  baseUrl:'https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync',
  getAccessToken:async()=>{if(!window.TitanesTournamentAuth)await new Promise(resolve=>window.addEventListener('titanes-auth-ready',resolve,{once:true}));return window.TitanesTournamentAuth.getAccessToken();},
@@ -57,7 +58,7 @@ function remoteEndpoint(){return 'https://ybtdxjqodcjoccyuauzv.supabase.co/funct
 function renderTvLink(){
  const link=el('tv-link'),copy=el('copy-tv-link'),status=el('remote-status');
  if(!link||!copy||!state.remoteTournamentId)return;
- const url=new URL('../tv-preview/index.html',location.href);url.searchParams.set('endpoint',remoteEndpoint());link.href=url.href;link.hidden=false;copy.hidden=false;
+ const url=new URL(TV_VIEWER_BASE);url.searchParams.set('endpoint',remoteEndpoint());link.href=url.href;link.hidden=false;copy.hidden=false;
  if(!state.remoteRevision&&status)status.textContent='Preparando transmisión segura…';
 }
 el('connect-tv').addEventListener('click',async()=>{
