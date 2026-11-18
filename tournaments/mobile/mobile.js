@@ -3,7 +3,10 @@
 'use strict';
 const engine=window.TitanesTournament,scoring=window.TitanesTournamentScoring;
 const preview=window.TitanesLocalPreviewSync.create(()=>{});
-const state={name:'Torneo Titanes',players:[],pairs:[],matches:[],events:{},notifications:[],round:1,phase:'registration',champion:null};
+const STORAGE_KEY='titanes_tournament_lab_v1';
+const DEFAULT_STATE={name:'Torneo Titanes',players:[],pairs:[],matches:[],events:{},notifications:[],round:1,phase:'registration',champion:null};
+const state=(()=>{try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(saved&&Array.isArray(saved.players)&&Array.isArray(saved.pairs)&&Array.isArray(saved.matches)&&saved.events&&typeof saved.events==='object')return {...DEFAULT_STATE,...saved};}catch(_){}return {...DEFAULT_STATE};})();
+function persistState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(error){console.warn('No se pudo guardar el torneo en este dispositivo:',error);}}
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
@@ -40,6 +43,7 @@ function makeScoreForm(match,pairId){
  return form;
 }
 function show(){
+ persistState();
  try{preview.publish(window.TitanesBuildTvSnapshot.build(state));}catch(error){console.warn('Vista TV no disponible:',error.message);}
  el('count').textContent=state.players.length+' jugadores inscritos';
  el('draw').disabled=state.players.length<8||state.players.length%2!==0||state.pairs.length>0;
