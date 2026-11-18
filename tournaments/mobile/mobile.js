@@ -4,7 +4,12 @@
 const engine=window.TitanesTournament,scoring=window.TitanesTournamentScoring;
 const preview=window.TitanesLocalPreviewSync.create(()=>{});
 const STORAGE_KEY='titanes_tournament_lab_v1';
-const DEFAULT_STATE={name:'Torneo Titanes',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null};
+const remote=window.TitanesRemoteTournamentSync.create({
+ baseUrl:'https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync',
+ getAccessToken:async()=>{if(!window.TitanesTournamentAuth)await new Promise(resolve=>window.addEventListener('titanes-auth-ready',resolve,{once:true}));return window.TitanesTournamentAuth.getAccessToken();},
+ onStatus:(status,detail)=>{const box=el('remote-status');if(!box)return;box.textContent=status==='updated'?'✅ En TV · revisión '+detail:'⚠ Sin sincronizar · '+detail;}
+});
+const DEFAULT_STATE={name:'Torneo Titanes',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null,remoteTournamentId:null,remoteRevision:0};
 const state=(()=>{try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(saved&&Array.isArray(saved.players)&&Array.isArray(saved.pairs)&&Array.isArray(saved.matches)&&saved.events&&typeof saved.events==='object')return {...DEFAULT_STATE,...saved};}catch(_){}return {...DEFAULT_STATE};})();
 function persistState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(error){console.warn('No se pudo guardar el torneo en este dispositivo:',error);}}
 const el=id=>document.getElementById(id);
@@ -48,11 +53,36 @@ function makeScoreForm(match,pairId){
  });
  return form;
 }
+function remoteEndpoint(){return 'https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync/'+state.remoteTournamentId;}
+function renderTvLink(){
+ const link=el('tv-link'),copy=el('copy-tv-link'),status=el('remote-status');
+ if(!link||!copy||!state.remoteTournamentId)return;
+ const url=new URL('../tv-preview/index.html',location.href);url.searchParams.set('endpoint',remoteEndpoint());link.href=url.href;link.hidden=false;copy.hidden=false;
+ if(!state.remoteRevision&&status)status.textContent='Preparando transmisión segura…';
+}
+el('connect-tv').addEventListener('click',async()=>{
+ try{
+  if(!state.matches.some(match=>match.type==='match')){notify('Primero sortea las parejas y prepara los encuentros.');return;}
+  if(!state.remoteTournamentId){state.remoteTournamentId=crypto.randomUUID().replace(/-/g,'');state.remoteRevision=0;persistState();}
+  el('remote-status').textContent='Conectando con la cuenta de Presidencia o directiva…';
+  const snapshot=window.TitanesBuildTvSnapshot.build(state);
+  const revision=await remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0);
+  state.remoteRevision=revision;persistState();renderTvLink();notify('Torneo transmitiéndose en vivo. Comparte el enlace de la pantalla TV.');
+ }catch(error){el('remote-status').textContent='No se pudo conectar · '+error.message;}
+});
+el('copy-tv-link').addEventListener('click',async()=>{
+ try{await navigator.clipboard.writeText(el('tv-link').href);notify('Enlace de TV copiado. Envíalo o ábrelo en el navegador del televisor.');}
+ catch(_){window.prompt('Copia este enlace para abrirlo en el navegador de la TV:',el('tv-link').href);}
+});
 function show(){
  state.completedMatches=state.completedMatches||[];
  state.leaderboard=scoring.rankPlayers([...state.completedMatches,...state.matches],state.pairs,state.events);
  persistState();
  try{preview.publish(window.TitanesBuildTvSnapshot.build(state));}catch(error){console.warn('Vista TV no disponible:',error.message);}
+ renderTvLink();
+ if(state.remoteTournamentId){
+  try{const snapshot=window.TitanesBuildTvSnapshot.build(state);remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0).then(revision=>{state.remoteRevision=revision;persistState();renderTvLink();}).catch(error=>{const box=el('remote-status');if(box)box.textContent='⚠ Sin sincronizar · '+error.message;});}catch(error){const box=el('remote-status');if(box)box.textContent='⚠ No se pudo preparar el marcador · '+error.message;}
+ }
  el('count').textContent=state.players.length+' jugadores inscritos';
  el('draw').disabled=state.players.length<8||state.players.length%2!==0||state.pairs.length>0;
  const players=el('players');players.replaceChildren(...state.players.map(p=>{const li=element('li');if(p.photo){const img=element('img');img.src=p.photo;img.alt='';img.className='player-photo-thumb';li.append(img);}li.append(element('span',p.name));return li;}));
