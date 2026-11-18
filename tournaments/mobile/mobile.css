@@ -5,7 +5,7 @@ header{background:#07111ff0;color:white;padding:20px clamp(16px,4vw,44px);border
 header small{letter-spacing:.08em;color:var(--muted);font-size:.82rem}
 header h1{font-size:clamp(1.8rem,4vw,2.7rem);margin:.3rem 0;color:var(--gold)}
 header p{margin:0;color:#cbd5e1}
-main{max-width:1200px;margin:auto;padding:clamp(12px,3vw,28px)}
+main{max-width:1200px;margin:auto;padding:clamp(12px,3vw,28px) 14px 110px}
 .panel{background:linear-gradient(145deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;margin-bottom:14px;padding:clamp(14px,2.2vw,22px);box-shadow:0 8px 24px #0003}
 h2{font-size:1.2rem;margin:0 0 14px;color:var(--gold)}
 form{display:grid;gap:10px}
