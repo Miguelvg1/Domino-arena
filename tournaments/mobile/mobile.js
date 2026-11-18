@@ -14,7 +14,7 @@ const remote=window.TitanesRemoteTournamentSync.create({
 });
 const DEFAULT_STATE={name:'Torneo Titanes',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null,remoteTournamentId:null,remoteRevision:0};
 const state=(()=>{try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(saved&&Array.isArray(saved.players)&&Array.isArray(saved.pairs)&&Array.isArray(saved.matches)&&saved.events&&typeof saved.events==='object')return {...DEFAULT_STATE,...saved};}catch(_){}return {...DEFAULT_STATE};})();
-function persistState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(error){console.warn('No se pudo guardar el torneo en este dispositivo:',error);}}
+function persistState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));const status=document.getElementById('save-status');if(status)status.textContent='Guardado automáticamente en este navegador · '+new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(error){console.warn('No se pudo guardar el torneo en este dispositivo:',error);const status=document.getElementById('save-status');if(status)status.textContent='⚠ No se pudo guardar en este navegador. No cierres esta página y exporta los datos antes de salir.';}}
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
