@@ -56,14 +56,15 @@ window.addEventListener('resize',()=>fitGrid(lastCount));
 const params=new URLSearchParams(window.location.search),remotePath=params.get('endpoint');
 if(remotePath){
  const endpoint=new URL(remotePath,window.location.href);
- const safe=endpoint.origin===window.location.origin&&endpoint.protocol==='https:'&&endpoint.username===''&&endpoint.password===''&&endpoint.search===''&&endpoint.hash===''&&endpoint.pathname.startsWith('/api/tournaments/');
- if(!safe){$('status').textContent='Endpoint remoto rechazado: usa HTTPS y /api/tournaments/ en el mismo dominio.';}
+ const allowedOrigin='https://ybtdxjqodcjoccyuauzv.supabase.co';
+ const safe=endpoint.origin===allowedOrigin&&endpoint.protocol==='https:'&&endpoint.username===''&&endpoint.password===''&&endpoint.search===''&&endpoint.hash===''&&/^\/functions\/v1\/tournament-tv-sync\/[A-Za-z0-9_-]{20,64}$/.test(endpoint.pathname);
+ if(!safe){$('status').textContent='Enlace de torneo no válido. Vuelve a copiarlo desde la app.';}
  else{
   const client=window.TitanesRemoteTvClient.create({
    fetchSnapshot:async()=>{
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
-    try{const response=await fetch(endpoint.href,{method:'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('HTTP '+response.status);return await response.json();}finally{clearTimeout(timeout);}
-   },onSnapshot:render,onStatus:status=>{$('status').textContent=status==='offline'?'Sin conexión · conservando el marcador':'Marcador remoto actualizado · SOLO LECTURA';},intervalMs:10000
+    try{const response=await fetch(endpoint.href,{method:'GET',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)throw Error('HTTP '+response.status);return await response.json();}finally{clearTimeout(timeout);}
+   },onSnapshot:render,onStatus:status=>{$('status').textContent=status==='offline'?'Sin conexión · conservando el marcador':'Marcador remoto actualizado · SOLO LECTURA';},intervalMs:5000
   }).start();window.addEventListener('pagehide',()=>client.close());
  }
 }else{
