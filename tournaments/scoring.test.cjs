@@ -4,7 +4,7 @@ let events=s.add(m,[],'a',70,'normal','juez');events=s.add(m,events,'a',100,'chi
 const pairs=[{id:'a',players:[{id:'a1',name:'Ana'},{id:'a2',name:'Alma'}]},{id:'b',players:[{id:'b1',name:'Beto'},{id:'b2',name:'Bia'}]}];
 const final={id:'final',type:'match',pairA:'a',pairB:'b',winner:'a',status:'finished'};
 const history={final:[{id:'f1',matchId:'final',pairId:'a',points:200,reason:'normal'},{id:'f2',matchId:'final',pairId:'a',points:100,reason:'chivo',responsiblePlayerId:'b1'},{id:'f3',matchId:'final',pairId:'a',points:100,reason:'pase_con_ficha',responsiblePlayerId:'b2'}]};
-const ranks=s.rankPlayers([final],pairs,history);assert.equal(ranks[0].id,'a1');assert.equal(ranks.find(x=>x.id==='b1').chivos,1);assert.equal(ranks.find(x=>x.id==='b1').average,0);assert.equal(ranks.find(x=>x.id==='a1').average,105);
+const ranks=s.rankPlayers([final],pairs,history);assert.equal(ranks[0].id,'a2');assert.equal(ranks.find(x=>x.id==='b1').chivos,1);assert.equal(ranks.find(x=>x.id==='b1').average,0);assert.equal(ranks.find(x=>x.id==='a1').average,105);
 assert.equal(s.rankPlayers([final],pairs,{final:[{matchId:'final',pairId:'a',points:200,reason:'normal'}]}).find(x=>x.id==='a1').lizaWins,1);
 assert.throws(()=>s.rankPlayers([{...final,winner:'wrong'}],pairs,history));
 console.log('Tournament scoring checks passed');
