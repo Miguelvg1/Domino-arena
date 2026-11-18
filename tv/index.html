@@ -23,6 +23,12 @@
     <button id="voice-toggle" type="button" aria-pressed="true">🔊 Voz automática activa</button>
     <span id="clock"></span>
   </div>
+  <form id="tournament-connect" class="tv-tournament-connect">
+    <label for="tournament-code">🏆 Ver torneo en vivo · escribe el código de 16 caracteres</label>
+    <input id="tournament-code" type="text" maxlength="19" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código del torneo">
+    <button type="submit">Abrir torneo</button>
+    <span id="tournament-error" role="status" aria-live="polite"></span>
+  </form>
   <div id="updated" aria-live="polite"></div>
   <section id="matches" class="matches" aria-label="Marcadores de las partidas activas"></section>
 </main>
