@@ -95,8 +95,14 @@ Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (!LAB_URL || !LAB_SERVICE_KEY) return respond({ error: "Servicio de laboratorio no configurado." }, 503);
   const url = new URL(request.url);
-  const id = /^\/functions\/v1\/tournament-tv-sync\/([A-Za-z0-9_-]{20,64})$/.exec(url.pathname)?.[1];
-  if (!id || url.search || url.hash) return respond({ error: "Torneo no encontrado." }, 404);
+  const pathParts = url.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+  const routeIndex = pathParts.lastIndexOf("tournament-tv-sync");
+  const id = routeIndex >= 0 && pathParts.length === routeIndex + 2
+    ? pathParts[routeIndex + 1]
+    : pathParts.length === 1 ? pathParts[0] : null;
+  if (!id || !/^[A-Za-z0-9_-]{20,64}$/.test(id) || url.search || url.hash) {
+    return respond({ error: "Torneo no encontrado." }, 404);
+  }
 
   const lab = createClient(LAB_URL, LAB_SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
   if (request.method === "GET") {
