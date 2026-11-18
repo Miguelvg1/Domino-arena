@@ -114,7 +114,7 @@ Deno.serve(async (request: Request) => {
     return respond({ error: "Se requiere JSON." }, 415);
   }
   const raw = await request.text();
-  if (raw.length > 140000) return respond({ error: "El snapshot es demasiado grande." }, 413);
+  if (raw.length > 1050000) return respond({ error: "El snapshot es demasiado grande." }, 413);
   let body: any;
   try { body = JSON.parse(raw); } catch { return respond({ error: "JSON inválido." }, 400); }
   if (!body || typeof body !== "object" || !Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0 ||
@@ -123,7 +123,7 @@ Deno.serve(async (request: Request) => {
   }
   let snapshot: ReturnType<typeof publicSnapshot>;
   try { snapshot = publicSnapshot(body.snapshot); } catch { return respond({ error: "Snapshot inválido." }, 400); }
-  if (JSON.stringify(snapshot).length > 130000) return respond({ error: "Reduce las fotos o la cantidad de mesas del snapshot." }, 413);
+  if (JSON.stringify(snapshot).length > 1040000) return respond({ error: "Reduce las fotos o la cantidad de mesas del snapshot." }, 413);
   const { data, error } = await lab.rpc("publish_tv_tournament_snapshot", {
     p_tournament_id: id,
     p_expected_revision: body.expectedRevision,
