@@ -25,6 +25,7 @@ jobs:
           node --check tournaments/mobile/mobile.js
           node --check tournaments/tv-preview/viewer.js
           node --check tournaments/shared/remote-tv-client.js
+          node --check tournaments/shared/remote-tournament-sync.js
       - name: Tournament bracket
         run: node tournaments/tournament-engine.test.cjs
       - name: Tournament scoring
@@ -54,3 +55,5 @@ jobs:
         run: node tournaments/lab/http-adapter.test.cjs
       - name: Remote TV synchronization
         run: node tournaments/shared/remote-tv-client.test.cjs
+      - name: Remote tournament synchronization transport
+        run: node tournaments/shared/remote-tournament-sync.test.cjs
