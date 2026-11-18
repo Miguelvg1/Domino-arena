@@ -100,7 +100,7 @@ Deno.serve(async (request: Request) => {
   const id = routeIndex >= 0 && pathParts.length === routeIndex + 2
     ? pathParts[routeIndex + 1]
     : pathParts.length === 1 ? pathParts[0] : null;
-  if (!id || !/^[A-Za-z0-9_-]{20,64}$/.test(id) || url.search || url.hash) {
+  if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id) || url.search || url.hash) {
     return respond({ error: "Torneo no encontrado." }, 404);
   }
 
