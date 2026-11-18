@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Titanes Dominó | Torneo de prueba</title><link rel="stylesheet" href="mobile.css"></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Titanes Dominó | Gestor de torneos</title><link rel="stylesheet" href="mobile.css"></head>
 <body>
-<header><small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small><h1>🏆 TITANES DOMINÓ · TORNEO</h1><p>Laboratorio aislado · inscripción y anotación de torneo · no modifica partidas oficiales</p></header>
+<header><small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small><h1>🏆 TITANES DOMINÓ · TORNEO</h1><p>Gestor de torneo del club · apartado separado de las partidas regulares · datos locales de prueba</p></header>
 <main>
 <section class="panel"><h2>Inscribir jugadores</h2><form id="register"><label for="name">Nombre o apodo<input id="name" required minlength="2" maxlength="60" autocomplete="off" placeholder="Escribe el jugador"></label><button type="submit">Agregar jugador</button></form><p id="count">0 jugadores</p><ul id="players"></ul></section>
 <section class="panel"><h2>Organizar el torneo</h2><p>Se necesitan al menos 8 jugadores y una cantidad par. El sorteo crea parejas y enfrenta las parejas por ronda.</p><button id="draw" type="button" disabled>Sortear parejas y enfrentamientos</button><button id="reset" type="button" class="secondary">Reiniciar laboratorio</button><p><a href="../tv-preview/index.html" target="_blank" rel="noopener">Abrir marcador TV de torneo · solo lectura</a></p><p id="message" role="status" aria-live="polite"></p></section>
