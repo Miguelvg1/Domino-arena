@@ -12,7 +12,7 @@
 - `tournament-engine.js`: parejas, sorteos, cuadros, resultados y horarios sujetos a aprobación.
 - `scoring.js`: historial por identificador de encuentro, reglas fijas de puntos, correcciones auditadas y cierre a 200.
 - `mobile/`: prototipo local, sin sincronización ni autenticación real.
-- `shared/`: contrato de snapshot y vista local sincronizada entre pestañas; backend remoto real aún pendiente.
+- `shared/`: vista local y transporte remoto con idempotencia y control de revisión. La vista de TV consulta un endpoint público de solo lectura.
 - `tv-preview/`: pantalla de torneo en solo lectura, con cuadrícula dinámica para todos los encuentros del snapshot.
 
 ## Aislamiento obligatorio
