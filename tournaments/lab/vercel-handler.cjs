@@ -29,8 +29,9 @@ function createLabHandler({env=process.env,pool}={}){
    const snapshot=validate(body.snapshot);
    return send(200,await store.publish({id:match[1],principal,operationId:body.operationId,expectedRevision:body.expectedRevision,snapshot}));
   }catch(e){
-   const status=e.message==='Forbidden'?403:e.message==='Not found'?404:e.message==='Revision conflict'?409:400;
-   return send(status,{error:status===400?'Invalid request':e.message});
+   const known={Forbidden:403,'Not found':404,'Revision conflict':409,'Invalid tournament ID':400,'Invalid operation ID':400,'Invalid expected revision':400,'Formato de marcador inválido':400,'Versión de marcador no compatible':400,'Faltan los encuentros':400};
+   const status=Object.prototype.hasOwnProperty.call(known,e.message)?known[e.message]:503;
+   return send(status,{error:status===503?'Service temporarily unavailable':status===400?'Invalid request':e.message});
   }
  };
 }
