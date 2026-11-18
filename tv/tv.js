@@ -9,7 +9,7 @@ const el=id=>document.getElementById(id);
 const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;};
 const config=window.TITANES_TV_CONFIG||{};
 const endpoint=typeof config.snapshotUrl==='string'?config.snapshotUrl:'';
-let revision=-1,timer=null,busy=false,lastCount=1,previousMatches=null,voiceEnabled=false,lastNotice='';
+let revision=-1,timer=null,busy=false,lastCount=1,previousMatches=null,voiceEnabled=true,lastNotice='';
 function validate(record){
  const snapshot=record&&record.snapshot?record.snapshot:record;
  if(!snapshot||snapshot.schemaVersion!==1||!Array.isArray(snapshot.matches))throw Error('Formato de marcador no compatible');
@@ -29,7 +29,7 @@ function validate(record){
 function sayNotice(text){
  lastNotice=text;const banner=el('liza-notice');banner.textContent=text;banner.hidden=false;
  if(!voiceEnabled||!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance)return;
- try{const utterance=new SpeechSynthesisUtterance(text);utterance.lang='es-DO';utterance.rate=.96;const spanish=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('es'));if(spanish)utterance.voice=spanish;speechSynthesis.speak(utterance);}catch(_){/* El aviso visual queda disponible sin síntesis de voz. */}
+ try{const utterance=new SpeechSynthesisUtterance(text);utterance.lang='es-DO';utterance.rate=.96;const spanish=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('es'));if(spanish)utterance.voice=spanish;utterance.onerror=event=>{if(event.error==='not-allowed'){voiceEnabled=false;const button=$('voice-toggle');button.setAttribute('aria-pressed','false');button.textContent='⚠ Pulsa OK para habilitar voz';}};speechSynthesis.speak(utterance);}catch(_){/* El aviso visual queda disponible sin síntesis de voz. */}
 }
 function announceScoreChanges(matches,isDemo){
  if(isDemo)return;
@@ -115,8 +115,9 @@ function updateClock(){el('clock').textContent=new Date().toLocaleTimeString('es
 el('fullscreen').addEventListener('click',()=>{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});});
 el('refresh').addEventListener('click',()=>refresh());
 const voiceButton=el('voice-toggle');
-if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){voiceButton.disabled=true;voiceButton.title='Esta TV no ofrece síntesis de voz; el aviso visual seguirá apareciendo.';voiceButton.textContent='Voz no disponible';}
-voiceButton.addEventListener('click',()=>{voiceEnabled=!voiceEnabled;voiceButton.setAttribute('aria-pressed',String(voiceEnabled));voiceButton.textContent=voiceEnabled?'🔊 Voz activada':'🔈 Activar voz';if(voiceEnabled&&lastNotice)sayNotice(lastNotice);else if(!voiceEnabled&&'speechSynthesis' in window)speechSynthesis.cancel();});
+if(!('speechSynthesis' in window)||!window.SpeechSynthesisUtterance){voiceEnabled=false;voiceButton.disabled=true;voiceButton.setAttribute('aria-pressed','false');voiceButton.title='Esta TV no ofrece síntesis de voz; el aviso visual seguirá apareciendo.';voiceButton.textContent='Voz no disponible';}
+else{voiceButton.setAttribute('aria-pressed','true');voiceButton.textContent='🔊 Voz automática activa';}
+voiceButton.addEventListener('click',()=>{voiceEnabled=!voiceEnabled;voiceButton.setAttribute('aria-pressed',String(voiceEnabled));voiceButton.textContent=voiceEnabled?'🔊 Voz activada':'🔈 Voz desactivada';if(voiceEnabled&&lastNotice)sayNotice(lastNotice);else if(!voiceEnabled&&'speechSynthesis' in window)speechSynthesis.cancel();});
 document.addEventListener('keydown',event=>{if(event.key==='Enter'&&document.activeElement===document.body)el('refresh').focus();});
 window.addEventListener('resize',()=>fitGrid(lastCount));
 render(DEMO,true);updateClock();refresh();timer=setInterval(refresh,10000);setInterval(updateClock,30000);
