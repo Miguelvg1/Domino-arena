@@ -12,7 +12,7 @@ El backend de prueba está desplegado en el proyecto Supabase de laboratorio; no
 
 ## Lectura de TV
 - `GET /functions/v1/tournament-tv-sync/{id}` entrega únicamente mesa, ronda, parejas, puntuación, fotos opcionales, avisos, cuadro, MVP y líder de puntos.
-- El identificador aleatorio de 128 bits evita que se encuentren torneos por enumeración. El enlace es público para quien lo reciba, porque está hecho para proyectar datos al público.
+- El código aleatorio de 80 bits (16 caracteres base32 legibles) evita la búsqueda práctica por enumeración y se escribe con el control remoto. El enlace es público para quien lo reciba, porque está hecho para proyectar datos al público.
 - No se envían PIN, teléfonos, historial privado ni funciones de edición a la TV.
 - La TV no tiene controles de anotación. Las vistas del torneo actualizan cada cinco segundos y mantienen el último marcador si pierden conexión.
 
