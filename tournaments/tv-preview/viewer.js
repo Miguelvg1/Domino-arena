@@ -8,8 +8,14 @@ let lastUpdate='',lastCount=1,seenNoticeIds=null,voiceEnabled=true;
 function fitGrid(count){
  const grid=$('matches'),n=Math.max(1,count),box=grid.getBoundingClientRect(),width=box.width||innerWidth,height=box.height||innerHeight*.65;
  const columns=n===1?1:n<=4?2:n<=6?3:n<=16?4:6,rows=Math.ceil(n/columns);
+ const cellWidth=width/columns,cellHeight=height/rows;
  grid.style.setProperty('--cols',columns);grid.style.setProperty('--rows',rows);
- grid.style.setProperty('--score',Math.max(24,Math.min(142,width/columns*.27,height/rows*.36))+'px');
+ grid.style.setProperty('--score',Math.max(22,Math.min(88,cellWidth*.22,cellHeight*.30))+'px');
+ grid.style.setProperty('--team',Math.max(10,Math.min(23,cellWidth*.065,cellHeight*.105))+'px');
+ grid.style.setProperty('--table',Math.max(10,Math.min(19,cellWidth*.055,cellHeight*.085))+'px');
+ grid.style.setProperty('--face-size',Math.max(12,Math.min(34,cellWidth*.10,cellHeight*.16))+'px');
+ grid.dataset.count=String(count);
+ grid.dataset.density=n>=13?'dense':n>=5?'compact':n>1?'multi':'single';
  lastCount=n;
 }
 function announceNotice(notice){
@@ -42,7 +48,7 @@ function render(raw){
   }
   card.append(teams,el('div','Meta: 200 puntos'));const target=card.lastChild;target.className='target';grid.append(card);
  }
- if(!grid.childNodes.length)grid.append(el('div','No hay encuentros activos en este momento.')).lastChild.className='empty';
+ if(!grid.childNodes.length){const empty=el('div','No hay encuentros activos en este momento.');empty.className='empty';grid.append(empty);}
  grid.dataset.count=String(s.matches.length);fitGrid(s.matches.length);
  $('bracket').replaceChildren(...s.bracket.map(b=>el('li',typeof b==='string'?b:b.label)));consumeNotices(s.events);
 }
