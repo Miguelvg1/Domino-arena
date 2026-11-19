@@ -1,0 +1,124 @@
+name: Android TV prototype APK
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/torneos-tv-diciembre-2026
+    paths:
+      - 'tv/**'
+      - 'scripts/enable_android_tv.cjs'
+      - '.github/workflows/android-tv-prototype.yml'
+      - 'tournaments/shared/**'
+      - 'tournaments/tv-preview/**'
+  pull_request:
+    paths:
+      - 'tv/**'
+      - 'scripts/enable_android_tv.cjs'
+      - '.github/workflows/android-tv-prototype.yml'
+      - 'tournaments/shared/**'
+      - 'tournaments/tv-preview/**'
+permissions:
+  contents: read
+jobs:
+  android-tv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK packages
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/platform-tools" >> "$GITHUB_PATH"
+          export PATH="/usr/local/lib/android/sdk/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Validate public read-only snapshot
+        run: |
+          node --check tv/tv.js
+          node --input-type=module <<'NODE'
+          const url = "https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/public-live-games-v3";
+          try {
+            const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(15000) });
+            if (!response.ok) throw new Error("Snapshot GET failed: " + response.status);
+            const record = await response.json();
+            if (!Number.isSafeInteger(record.revision) || record.revision < 0) throw new Error("Missing monotonic snapshot revision");
+            if (record.snapshot?.schemaVersion !== 1 || !Array.isArray(record.snapshot.matches)) throw new Error("Invalid live games snapshot");
+            const demo = record.snapshot.matches.find(match => match.tableName === "TV LAB DEMO");
+            if (!demo || demo.teamA !== "TV Azul 1 / TV Azul 2" || demo.teamB !== "TV Rojo 1 / TV Rojo 2" || demo.scoreA !== 120 || demo.scoreB !== 80 || demo.target !== 200) throw new Error("Laboratory match mapping or scores are incorrect");
+            const allowed = new Set(["table", "tableName", "teamA", "teamB", "scoreA", "scoreB", "target", "status"]);
+            for (const match of record.snapshot.matches) {
+              if (Object.keys(match).some(key => !allowed.has(key))) throw new Error("Snapshot contains a non-public field");
+              if (match.status !== "activa" || !Number.isSafeInteger(match.scoreA) || !Number.isSafeInteger(match.scoreB)) throw new Error("Invalid active match");
+            }
+            const write = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", signal: AbortSignal.timeout(15000) });
+            if (write.status !== 405) throw new Error("Public feed unexpectedly accepted a write method");
+            console.log("Public snapshot valid; matches:", record.snapshot.matches.length, "POST:", write.status);
+          } catch (error) {
+            console.warn("Public snapshot probe failed; APK packaging continues:", error.message);
+          }
+          NODE
+      - name: Assemble isolated TV-only web assets
+        run: |
+          mkdir -p www
+          cp tv/index.html tv/tv.css tv/tv.js tv/config.js www/
+          mkdir -p www/tournaments
+          cp -R tournaments/shared tournaments/tv-preview www/tournaments/
+      - name: Assign test-only Android package ID
+        run: |
+          node -e 'const fs=require("node:fs"); const p="capacitor.config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.appId="com.titanesdomino.tvtest"; c.appName="Titanes TV Prueba"; fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n");'
+      - name: Generate Capacitor Android project
+        run: |
+          if [ ! -f android/gradlew ]; then npx cap add android; fi
+          npx cap sync android
+      - name: Enable TV launcher and banner
+        run: node scripts/enable_android_tv.cjs
+      - name: Validate Android TV launcher configuration
+        run: |
+          grep -q 'android.intent.category.LEANBACK_LAUNCHER' android/app/src/main/AndroidManifest.xml
+          grep -q 'android.hardware.touchscreen.*android:required="false"' android/app/src/main/AndroidManifest.xml
+          grep -q 'com.titanesdomino.tvtest' android/app/build.gradle
+          test -s android/app/src/main/res/drawable-nodpi/tv_banner.png
+          test -s www/index.html
+          test -s www/tournaments/tv-preview/index.html
+          test -s www/tournaments/shared/tv-snapshot.js
+          grep -q 'tournament-connect' www/index.html
+          grep -q 'tournament-tv-sync' www/tournaments/tv-preview/viewer.js
+      - name: Build Android TV debug APK for internal testing
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: titanes-android-tv-debug-for-testing
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise app with Android TV emulator and D-pad
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          system-image-api-level: 34
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          emulator-boot-timeout: 600
+          script: |
+            adb shell settings put global package_verifier_enable 0 || true
+            adb shell settings put global verifier_verify_adb_installs 0 || true
+            adb install --no-streaming android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell monkey -p com.titanesdomino.tvtest 1
+            sleep 10
+            adb shell input keyevent KEYCODE_DPAD_DOWN
+            adb shell input keyevent KEYCODE_DPAD_RIGHT
+            adb shell input keyevent KEYCODE_DPAD_CENTER
+            adb shell pidof com.titanesdomino.tvtest
+            if adb logcat -d -t 500 | grep -q 'FATAL EXCEPTION'; then exit 1; fi

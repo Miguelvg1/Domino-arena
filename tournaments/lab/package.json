@@ -1,0 +1,1 @@
+{"name":"titanes-tv-laboratory-server","version":"0.1.0","private":true,"description":"Isolated read-only TV snapshot laboratory API","main":"server.cjs","scripts":{"start":"node server.cjs","test":"node server.test.cjs"},"dependencies":{"pg":"8.16.3"}}
