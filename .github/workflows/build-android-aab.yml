@@ -5,8 +5,10 @@ on:
   push:
     branches:
       - main
+      - fix/score-action-feedback-lab-20261120
     paths:
       - '.play-build-trigger'
+      - '.github/workflows/build-android-aab.yml'
 
 permissions:
   contents: read
