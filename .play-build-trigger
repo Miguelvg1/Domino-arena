@@ -1,6 +1,6 @@
 Titanes Dominó Android build trigger
-Version: 1.0.3
-VersionCode: 4
-Reason: release Android startup and profile loading fixes verified in Experimental 3
-Date: 2026-10-28
-Rebuild: minSdkVersion 24 required by Google Play automatic protection
+Version: 1.0.4
+VersionCode: 5
+Reason: build candidate on isolated score correction feature branch; do not publish
+Date: 2026-11-20
+Validation: CI static checks passed; functional Supabase tests pending

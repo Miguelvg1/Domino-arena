@@ -5,8 +5,12 @@ on:
   push:
     branches:
       - main
+      - fix/score-action-feedback-lab-20261120
     paths:
       - '.play-build-trigger'
+      - '.github/workflows/build-android-aab.yml'
+      - 'tests/score-ui-contract.test.mjs'
+      - 'tests/score-actions-runtime.test.mjs'
 
 permissions:
   contents: read
@@ -38,6 +42,11 @@ jobs:
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Validate score UI contracts
+        run: |
+          node tests/score-ui-contract.test.mjs
+          node tests/score-actions-runtime.test.mjs
 
       - name: Install dependencies
         run: npm install
@@ -79,9 +88,25 @@ jobs:
 
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 4')
-          s = s.replace('versionName "1.0"', 'versionName "1.0.3"')
+          if 'versionCode 1' not in s or 'versionName "1.0"' not in s:
+              raise RuntimeError('Plantilla Android inesperada: no se cambia la versión')
+          s = s.replace('versionCode 1', 'versionCode 5')
+          s = s.replace('versionName "1.0"', 'versionName "1.0.4"')
+          if 'applicationId "com.titanesdomino.app"' not in s:
+              raise RuntimeError('Identificador Android incorrecto')
           p.write_text(s)
+          PY
+
+      - name: Verify correction code included
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('www/index.html').read_text()
+          for token in ('correctScoreV2', 'voidScore', "b.dataset.busy='1'", "await action(b.dataset.a,b)"):
+              if token not in src:
+                  raise RuntimeError(f'Falta corrección de puntuaciones: {token}')
+          print('Controles de corrección presentes en el paquete Android')
           PY
 
       - name: Restore permanent upload key
@@ -126,12 +151,25 @@ jobs:
           test -f "$AAB"
           jarsigner -verify "$AAB"
           mkdir -p release
-          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.3.aab"
+          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.4.aab"
+
+      - name: Verify release bundle metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB="release/Titanes-Domino-Alpha-1.0.4.aab"
+          test -s "$AAB"
+          # Android upload keys are commonly self-signed: -strict treats that
+          # expected certificate warning as an error even for valid AABs.
+          jarsigner -verify -verbose "$AAB" > /tmp/titanes-jarsigner-check.txt
+          grep -q "jar verified" /tmp/titanes-jarsigner-check.txt
+          echo "AAB SHA256:"
+          sha256sum "$AAB"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Titanes-Domino-Alpha-AAB-API36-v1.0.3
-          path: release/Titanes-Domino-Alpha-1.0.3.aab
+          name: Titanes-Domino-Alpha-AAB-API36-v1.0.4
+          path: release/Titanes-Domino-Alpha-1.0.4.aab
           if-no-files-found: error
           retention-days: 30

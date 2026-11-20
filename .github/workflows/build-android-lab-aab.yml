@@ -1,0 +1,129 @@
+name: Build Titanes laboratory AAB for Google Play internal testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/score-action-feedback-lab-20261120
+    paths:
+      - '.github/workflows/build-android-lab-aab.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-lab-aab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - name: Verify scoring behavior
+        run: |
+          node tests/score-ui-contract.test.mjs
+          node tests/score-actions-runtime.test.mjs
+      - name: Install dependencies
+        run: npm install
+      - name: Prepare laboratory Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf www android
+          mkdir www
+          rsync -a ./ www/ --exclude '.git' --exclude '.github' --exclude 'www' --exclude 'android' --exclude 'node_modules' --exclude 'package.json' --exclude 'package-lock.json' --exclude 'capacitor.config.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          config=Path('capacitor.config.json')
+          data=json.loads(config.read_text())
+          data['appId']='com.titanesdomino.app.test'
+          data['appName']='Titanes Dominó PRUEBAS'
+          config.write_text(json.dumps(data,ensure_ascii=False,indent=2))
+          html=Path('www/index.html')
+          s=html.read_text()
+          prod_url='https://hvpyngkqtqzvmweavego.supabase.co'
+          prod_key='sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX'
+          assert s.count(prod_url)==1 and s.count(prod_key)==1
+          s=s.replace(prod_url,'https://ybtdxjqodcjoccyuauzv.supabase.co').replace(prod_key,'sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk')
+          assert prod_url not in s and prod_key not in s
+          html.write_text(s)
+          PY
+          npx cap add android
+          npx cap sync android
+          python3 - <<'PY'
+          from pathlib import Path
+          v=Path('android/variables.gradle')
+          s=v.read_text().replace('compileSdkVersion = 35','compileSdkVersion = 36').replace('targetSdkVersion = 35','targetSdkVersion = 36').replace('minSdkVersion = 23','minSdkVersion = 24')
+          assert 'compileSdkVersion = 36' in s and 'targetSdkVersion = 36' in s
+          v.write_text(s)
+          g=Path('android/app/build.gradle')
+          s=g.read_text()
+          assert 'applicationId "com.titanesdomino.app.test"' in s
+          assert 'versionCode 1' in s and 'versionName "1.0"' in s
+          g.write_text(s.replace('versionCode 1','versionCode 2').replace('versionName "1.0"','versionName "1.0.5-lab"'))
+          PY
+      - name: Restore signing key
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/titanes-upload.jks"
+          keytool -list -keystore "$GITHUB_WORKSPACE/titanes-upload.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias titanes-upload >/dev/null
+      - name: Build signed laboratory AAB
+        working-directory: android
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/titanes-upload.jks" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias=titanes-upload \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+      - name: Verify signed bundle and laboratory isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          test -s "$AAB"
+          jarsigner -verify "$AAB"
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          aab=Path('android/app/build/outputs/bundle/release/app-release.aab')
+          with ZipFile(aab) as z:
+              html=z.read('base/assets/public/index.html').decode('utf-8')
+          assert 'https://ybtdxjqodcjoccyuauzv.supabase.co' in html
+          assert 'sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk' in html
+          assert 'https://hvpyngkqtqzvmweavego.supabase.co' not in html
+          assert 'sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX' not in html
+          print('PASS: signed AAB contains laboratory endpoint only')
+          PY
+          mkdir -p release
+          cp "$AAB" release/Titanes-Domino-PRUEBAS-1.0.5-lab.aab
+          sha256sum release/Titanes-Domino-PRUEBAS-1.0.5-lab.aab
+      - name: Upload Google Play internal testing AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Titanes-Domino-PRUEBAS-GooglePlay-AAB-1.0.5
+          path: release/Titanes-Domino-PRUEBAS-1.0.5-lab.aab
+          if-no-files-found: error
+          retention-days: 30
