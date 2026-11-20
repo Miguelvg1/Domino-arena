@@ -48,6 +48,16 @@ jobs:
           from pathlib import Path
           path=Path('capacitor.config.json')
           data=json.loads(path.read_text())
+          # Test APK must never write to the live club database.
+          html=Path('www/index.html')
+          src=html.read_text()
+          prod_url='https://hvpyngkqtqzvmweavego.supabase.co'
+          prod_key='sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX'
+          assert src.count(prod_url)==1 and src.count(prod_key)==1, 'Unexpected production configuration'
+          src=src.replace(prod_url,'https://ybtdxjqodcjoccyuauzv.supabase.co')
+          src=src.replace(prod_key,'sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk')
+          assert prod_url not in src and prod_key not in src, 'Production endpoint remains in test APK'
+          html.write_text(src)
           data['appId']='com.titanesdomino.app.test'
           data['appName']='Titanes Dominó PRUEBAS'
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2))
