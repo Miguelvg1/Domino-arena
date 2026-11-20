@@ -153,6 +153,16 @@ jobs:
           mkdir -p release
           cp "$AAB" "release/Titanes-Domino-Alpha-1.0.4.aab"
 
+      - name: Verify release bundle metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB="release/Titanes-Domino-Alpha-1.0.4.aab"
+          test -s "$AAB"
+          jarsigner -verify -strict "$AAB"
+          echo "AAB SHA256:"
+          sha256sum "$AAB"
+
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
