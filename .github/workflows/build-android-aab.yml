@@ -79,9 +79,25 @@ jobs:
 
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 4')
-          s = s.replace('versionName "1.0"', 'versionName "1.0.3"')
+          if 'versionCode 1' not in s or 'versionName "1.0"' not in s:
+              raise RuntimeError('Plantilla Android inesperada: no se cambia la versión')
+          s = s.replace('versionCode 1', 'versionCode 5')
+          s = s.replace('versionName "1.0"', 'versionName "1.0.4"')
+          if 'applicationId "com.titanesdomino.app"' not in s:
+              raise RuntimeError('Identificador Android incorrecto')
           p.write_text(s)
+          PY
+
+      - name: Verify correction code included
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('www/index.html').read_text()
+          for token in ('correctScoreV2', 'voidScore', "b.dataset.busy='1'", "await action(b.dataset.a,b)"):
+              if token not in src:
+                  raise RuntimeError(f'Falta corrección de puntuaciones: {token}')
+          print('Controles de corrección presentes en el paquete Android')
           PY
 
       - name: Restore permanent upload key
@@ -126,12 +142,12 @@ jobs:
           test -f "$AAB"
           jarsigner -verify "$AAB"
           mkdir -p release
-          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.3.aab"
+          cp "$AAB" "release/Titanes-Domino-Alpha-1.0.4.aab"
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Titanes-Domino-Alpha-AAB-API36-v1.0.3
-          path: release/Titanes-Domino-Alpha-1.0.3.aab
+          name: Titanes-Domino-Alpha-AAB-API36-v1.0.4
+          path: release/Titanes-Domino-Alpha-1.0.4.aab
           if-no-files-found: error
           retention-days: 30
