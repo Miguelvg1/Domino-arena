@@ -14,6 +14,7 @@ const checks = [
   ['button reset', /b\.disabled=false/],
   ['liza alert', /type==='liza_200_0'/],
   ['score recalculation feedback', /marcador recalculado/],
+  ['void dialog label', /title\.startsWith\('Anular'\)\?'Continuar con anulación':'Guardar corrección'/],
 ];
 for (const [label, pattern] of checks) {
   assert.match(html, pattern, 'Missing contract: ' + label);
