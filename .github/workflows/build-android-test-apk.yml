@@ -79,6 +79,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+      - name: Verify laboratory endpoint inside packaged APK
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          apk=Path('android/app/build/outputs/apk/debug/app-debug.apk')
+          with ZipFile(apk) as archive:
+              html=archive.read('assets/public/index.html').decode('utf-8')
+          assert 'https://ybtdxjqodcjoccyuauzv.supabase.co' in html, 'Laboratory URL missing from APK'
+          assert 'sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk' in html, 'Laboratory key missing from APK'
+          assert 'https://hvpyngkqtqzvmweavego.supabase.co' not in html, 'Production URL inside APK'
+          assert 'sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX' not in html, 'Production key inside APK'
+          print('PASS: packaged APK uses laboratory Supabase only')
+          PY
       - name: Verify independent package
         shell: bash
         run: |
