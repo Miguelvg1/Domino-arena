@@ -10,6 +10,7 @@ on:
       - '.play-build-trigger'
       - '.github/workflows/build-android-aab.yml'
       - 'tests/score-ui-contract.test.mjs'
+      - 'tests/score-actions-runtime.test.mjs'
 
 permissions:
   contents: read
@@ -43,7 +44,9 @@ jobs:
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Validate score UI contracts
-        run: node tests/score-ui-contract.test.mjs
+        run: |
+          node tests/score-ui-contract.test.mjs
+          node tests/score-actions-runtime.test.mjs
 
       - name: Install dependencies
         run: npm install
