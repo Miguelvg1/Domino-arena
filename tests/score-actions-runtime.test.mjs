@@ -11,4 +11,19 @@ await ctx.correctScoreV2({dataset:{type:'normal',team:'L',points:'34',credit:'pl
 assert.equal(calls[0].name,'correct_score_event_v2');assert.equal(calls[0].args.p_new_points,25);assert.equal(calls[0].args.p_event_id,'event-1');assert.equal(renders,1);
 await ctx.voidScore('event-1',25);assert.equal(calls[1].name,'void_score_event');assert.equal(calls[1].args.p_event_id,'event-1');assert.equal(renders,2);
 error={message:'Permission denied'};await ctx.voidScore('event-2',25);assert.equal(renders,2);assert.ok(alerts.some(x=>x.includes('Permission denied')));
-console.log('PASS: correction, void, and RPC error handling using mocked client (no database writes)');
+// Cancellation must not submit an RPC or redraw the scoreboard.
+const beforeCancelCalls=calls.length;
+const beforeCancelRenders=renders;
+ctx.titanScoreDialog=async()=>null;
+await ctx.voidScore('event-3',25);
+await ctx.correctScoreV2({dataset:{type:'normal',team:'L',points:'34',credit:'player-a',id:'event-3'}});
+assert.equal(calls.length,beforeCancelCalls);
+assert.equal(renders,beforeCancelRenders);
+// A denied correction must display the backend error without falsely reporting success.
+ctx.titanScoreDialog=async()=>({team:'L',points:'25',reason:'incorrect'});
+const previousToastCount=toast.length;
+await ctx.correctScoreV2({dataset:{type:'normal',team:'L',points:'34',credit:'player-a',id:'event-4'}});
+assert.equal(renders,beforeCancelRenders);
+assert.equal(toast.length,previousToastCount);
+assert.ok(alerts.some(x=>x.includes('Permission denied')));
+console.log('PASS: correction, void, cancellation and denied RPC handling using mocked client (no database writes)');
