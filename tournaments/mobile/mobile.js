@@ -10,7 +10,7 @@ const TV_CODE_ALPHABET='0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 function createTournamentTvCode(){const bytes=crypto.getRandomValues(new Uint8Array(16));return Array.from(bytes,byte=>TV_CODE_ALPHABET[byte&31]).join('');}
 const remote=window.TitanesRemoteTournamentSync.create({
  baseUrl:'https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync-lab',
- getAccessToken:async()=>{if(!window.TitanesTournamentAuth)await new Promise(resolve=>window.addEventListener('titanes-auth-ready',resolve,{once:true}));return window.TitanesTournamentAuth.getAccessToken();},
+ getAccessToken:()=>window.TitanesTournamentAuth.getAccessToken(),
  onStatus:(status,detail)=>{const box=el('remote-status');if(!box)return;box.textContent=status==='updated'?'✅ En TV · revisión '+detail:'⚠ Sin sincronizar · '+detail;}
 });
 const DEFAULT_STATE={name:'Torneo comunitario Los Titanes de Los Guandules',date:'2026-12-13',capacity:32,tables:8,rules:'Mejor de tres partidas a 200 puntos',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null,remoteTournamentId:null,remoteRevision:0};
@@ -319,10 +319,11 @@ el('tournament-list').addEventListener('change',event=>{location.href=tournament
 el('new-tournament').addEventListener('click',()=>{location.href=tournamentUrl(crypto.randomUUID());});
 el('members').addEventListener('change',()=>{el('name').required=!el('members').value;});
 let actor, role;
-window.addEventListener('titanes-auth-ready',async()=>{
- try{
-  const session=await window.TitanesTournamentAuth.organizer();
-  const saved=await window.TitanesTournamentAuth.readTournament(tournamentId);
+window.loadTitanesTournament = async function (auth, signal) {
+  const session=await auth.organizer();
+  const saved=await auth.readTournament(tournamentId);
+  if(signal.aborted)return;
+  window.TitanesTournamentAuth=auth;
   if(saved){
    Object.assign(state,saved.state);revision=saved.revision;
    el('save-status').textContent='Guardado en el laboratorio · revisión '+revision;
@@ -338,6 +339,5 @@ window.addEventListener('titanes-auth-ready',async()=>{
   el('manager').hidden=false;
   el('access').hidden=true;
   show();
- }catch(error){el('access').textContent=error.message;}
-},{once:true});
+};
 })();
