@@ -13,7 +13,7 @@ const remote=window.TitanesRemoteTournamentSync.create({
  getAccessToken:async()=>{if(!window.TitanesTournamentAuth)await new Promise(resolve=>window.addEventListener('titanes-auth-ready',resolve,{once:true}));return window.TitanesTournamentAuth.getAccessToken();},
  onStatus:(status,detail)=>{const box=el('remote-status');if(!box)return;box.textContent=status==='updated'?'✅ En TV · revisión '+detail:'⚠ Sin sincronizar · '+detail;}
 });
-const DEFAULT_STATE={name:'Torneo comunitario Los Titanes de Los Guandules',date:'2026-12-13',tables:8,rules:'Mejor de tres partidas a 200 puntos',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null,remoteTournamentId:null,remoteRevision:0};
+const DEFAULT_STATE={name:'Torneo comunitario Los Titanes de Los Guandules',date:'2026-12-13',capacity:32,tables:8,rules:'Mejor de tres partidas a 200 puntos',players:[],pairs:[],matches:[],completedMatches:[],leaderboard:[],events:{},notifications:[],round:1,phase:'registration',champion:null,remoteTournamentId:null,remoteRevision:0};
 const tournamentId=new URLSearchParams(location.search).get('torneo')||'comunitario-2026';
 const tournamentKey=id=>STORAGE_KEY+':'+id;
 const state=(()=>{try{const saved=JSON.parse(localStorage.getItem(tournamentKey(tournamentId))||'null');if(saved&&Array.isArray(saved.players)&&Array.isArray(saved.pairs)&&Array.isArray(saved.matches)&&saved.events&&typeof saved.events==='object')return {...DEFAULT_STATE,...saved};}catch(_){}return tournamentId==='comunitario-2026'?{...DEFAULT_STATE}:{...DEFAULT_STATE,name:'Nuevo torneo',date:new Date().toLocaleDateString('en-CA',{timeZone:'America/Santo_Domingo'})};})();
@@ -140,13 +140,14 @@ function show(){
   try{const snapshot=window.TitanesBuildTvSnapshot.build(state);pending.then(()=>{if(saveFailed)throw Error("El torneo requiere recarga.");return remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0);}).then(revision=>{state.remoteRevision=revision;persistState();renderTvLink();}).catch(error=>{const box=el('remote-status');if(box)box.textContent='⚠ Sin sincronizar · '+error.message;});}catch(error){const box=el('remote-status');if(box)box.textContent='⚠ No se pudo preparar el marcador · '+error.message;}
  }
  el('config-tables').disabled=state.matches.length>0;
- el('count').textContent=state.players.length+'/32 inscritos · '+state.players.filter(player=>player.confirmed).length+' validados';
- el('draw').disabled=state.players.length!==32||!state.players.every(player=>player.confirmed)||state.pairs.length>0;
- el('draw-matches').disabled=state.pairs.length!==16||state.matches.length>0;
+ el('config-capacity').disabled=state.pairs.length>0;
+ el('count').textContent=state.players.length+'/'+state.capacity+' inscritos · '+state.players.filter(player=>player.confirmed).length+' validados';
+ el('draw').disabled=state.players.length!==state.capacity||!state.players.every(player=>player.confirmed)||state.pairs.length>0;
+ el('draw-matches').disabled=state.pairs.length!==state.capacity/2||state.matches.length>0;
  el('individual-rank').replaceChildren(...state.leaderboard.map(row=>element('li',row.name+' · Average '+row.average.toFixed(2)+'% · '+row.gamesWon+'/'+row.gamesPlayed+' partidas · '+row.lizaWins+' lizas propinadas · '+row.lizaLosses+' recibidas')));
  el('pair-rank').replaceChildren(...series.rankPairs(allMatches,state.pairs,state.events).map(row=>
   element('li',pairName(row.pair.id)+' · '+row.seriesWon+' series ganadas · '+row.gamesWon+'/'+row.gamesPlayed+' partidas · '+row.points+' puntos')));
- el('bracket').replaceChildren(...allMatches.map(match=>element('li',match.round+' · '+pairName(match.pairA)+' vs '+pairName(match.pairB)+(match.winner?' · Ganó '+pairName(match.winner):''))));
+ el('bracket').replaceChildren(...allMatches.map(match=>element('li',match.round+' · '+pairName(match.pairA)+(match.type==='bye'?' · Pase automático':' vs '+pairName(match.pairB)+(match.winner?' · Ganó '+pairName(match.winner):'')))));
  const players=el('players');players.replaceChildren(...state.players.map(p=>{const li=element('li');if(p.photo){const img=element('img');img.src=p.photo;img.alt='';img.className='player-photo-thumb';li.append(img);}li.append(element('span',p.name));
  if(!state.pairs.length){
   const verify=element('button',p.confirmed?'Quitar validación':'Validar asistencia');
@@ -269,12 +270,12 @@ async function compressPhoto(file){
  const canvas=document.createElement('canvas'),size=64,scale=Math.min(size/image.width,size/image.height);canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return canvas.toDataURL('image/jpeg',.55);
 }
 el('register').addEventListener('submit',async event=>{
- event.preventDefault();if(saveFailed||state.pairs.length||state.players.length>=32){notify('Inscripciones cerradas.');return;}
+ event.preventDefault();if(saveFailed||state.pairs.length||state.players.length>=state.capacity){notify('Inscripciones cerradas.');return;}
  const option=el('members').selectedOptions[0];
  const memberId=option?.value;
  const name=memberId?option.textContent:el('name').value.trim();if(name.length<2)return;
  if(state.players.some(p=>p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){notify('Ese nombre ya está inscrito.');return;}
- try{const photo=await compressPhoto(el('photo').files[0]);if(state.players.length>=32||state.pairs.length||state.players.some(p=>p.id===memberId||p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es')))return;state.players.push({id:memberId||crypto.randomUUID(),name,photo,confirmed:false});el('members').value='';el('name').required=true;el('name').value='';el('photo').value='';notify('Jugador agregado.');show();}catch(error){notify(error.message);}
+ try{const photo=await compressPhoto(el('photo').files[0]);if(state.players.length>=state.capacity||state.pairs.length||state.players.some(p=>p.id===memberId||p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es')))return;state.players.push({id:memberId||crypto.randomUUID(),name,photo,confirmed:false});el('members').value='';el('name').required=true;el('name').value='';el('photo').value='';notify('Jugador agregado.');show();}catch(error){notify(error.message);}
 });
 function animateDraw(button, run){
  button.disabled=true;
@@ -285,19 +286,28 @@ function animateDraw(button, run){
  },matchMedia('(prefers-reduced-motion: reduce)').matches?0:650);
 }
 el('draw').addEventListener('click',()=>animateDraw(el('draw'),()=>{
- if(state.players.length!==32||!state.players.every(player=>player.confirmed)||state.pairs.length)throw Error('Valida 32 jugadores antes del sorteo.');
+ if(state.players.length!==state.capacity||!state.players.every(player=>player.confirmed)||state.pairs.length)throw Error('Valida a los '+state.capacity+' jugadores antes del sorteo.');
  state.pairs=engine.pairPlayers(state.players);
- notify('16 parejas sorteadas. Ya puedes sortear sus enfrentamientos.');
+ notify(state.pairs.length+' parejas sorteadas. Ya puedes sortear sus enfrentamientos.');
 }));
 el('draw-matches').addEventListener('click',()=>animateDraw(el('draw-matches'),()=>{
- if(state.pairs.length!==16||state.matches.length)throw Error('Se necesitan 16 parejas sorteadas.');
- state.matches=engine.matchesFromPairs(state.pairs).first.map(match=>({...match,round:'Octavos'}));
+ if(state.pairs.length!==state.capacity/2||state.matches.length)throw Error('Completa el sorteo de parejas antes de preparar el cuadro.');
+ const draw=engine.matchesFromPairs(state.pairs);
+ state.matches=draw.first;
  state.phase='elimination';
- notify('Octavos de final preparados.');
+ notify(draw.first[0].round+' · '+(draw.byes ? draw.byes+' pases automáticos sorteados.' : 'Enfrentamientos sorteados.'));
 }));
-for(const key of ['name','date','tables','rules'])el('config-'+key).value=state[key];
+for(const key of ['name','date','capacity','tables','rules'])el('config-'+key).value=state[key];
 el('configuration').addEventListener('submit',event=>{
  event.preventDefault();
+ if(!state.pairs.length){
+  const capacity=Number(el('config-capacity').value);
+  if(!Number.isInteger(capacity)||capacity<8||capacity>64||capacity%2||capacity<state.players.length){
+   notify('Elige un número par entre 8 y 64 que cubra los inscritos.');
+   return;
+  }
+  state.capacity=capacity;
+ }
  state.name=el('config-name').value.trim();
  state.date=el('config-date').value;
  if(!state.matches.length)state.tables=Number(el('config-tables').value);
@@ -317,7 +327,7 @@ window.addEventListener('titanes-auth-ready',async()=>{
    Object.assign(state,saved.state);revision=saved.revision;
    el('save-status').textContent='Guardado en el laboratorio · revisión '+revision;
   }
-  for(const key of ['name','date','tables','rules'])el('config-'+key).value=state[key];
+  for(const key of ['name','date','capacity','tables','rules'])el('config-'+key).value=state[key];
   actor=session.id;
   role=session.role;
   for(const member of session.members){

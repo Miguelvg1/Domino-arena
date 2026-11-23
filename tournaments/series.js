@@ -4,7 +4,6 @@
 })(globalThis, function (scoring, bracket) {
   'use strict';
 
-  const rounds = ['Octavos', 'Cuartos', 'Semifinales'];
   function current(match) {
     return { ...match, id: match.id + ':partida-' + ((match.games?.length || 0) + 1) };
   }
@@ -31,12 +30,12 @@
       ] };
     }
     const round = state.round + 1;
-    return { ...state, completedMatches, round, matches: bracket.nextRound(matches, rounds[round - 1]) };
+    return { ...state, completedMatches, round, matches: bracket.nextRound(matches, bracket.roundName(matches.length / 2)) };
   }
 
   function rankPairs(matches, pairs, events) {
     return pairs.map(pair => {
-      const appearances = matches.filter(match => match.pairA === pair.id || match.pairB === pair.id);
+      const appearances = matches.filter(match => match.type === 'match' && (match.pairA === pair.id || match.pairB === pair.id));
       const games = appearances.flatMap(match => match.games || []);
       return {
         pair,

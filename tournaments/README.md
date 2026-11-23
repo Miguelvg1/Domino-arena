@@ -5,8 +5,8 @@ La rama experimental reutiliza el gestor, el motor de eliminatorias, el catálog
 ## Flujo
 
 1. Configurar nombre, fecha, mesas disponibles y reglamento.
-2. Inscribir y validar a 32 participantes. Se admite el directorio del laboratorio y el registro de invitados.
-3. Sortear las 16 parejas y luego sortear los encuentros.
+2. Elegir un cupo par de 8 a 64 jugadores e inscribir y validar ese total. Se admite el directorio del laboratorio y el registro de invitados.
+3. Sortear las parejas y luego los encuentros. El cuadro asigna pases automáticos según el cupo.
 4. Disputar cada serie al mejor de tres partidas a 200 puntos. La confirmación de la segunda victoria avanza el cuadro automáticamente. Las semifinales determinan la final y el tercer lugar.
 5. Revisar podio, estadísticas individuales, clasificación por parejas y MVP. El average conserva las penalizaciones y el bono acordados en el prototipo. El cálculo de liza distingue la dominada de los puntos especiales.
 6. Desde el gestor, conectar el marcador público. En el APK de TV se introduce el código de 16 caracteres. La pantalla pública recibe datos destinados al marcador y eventos audiovisuales.
