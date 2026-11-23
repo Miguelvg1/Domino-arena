@@ -36,7 +36,32 @@ function renderTournamentList(){
   return item;
  }));
 }
-function persistState(){try{localStorage.setItem(tournamentKey(tournamentId),JSON.stringify(state));const status=document.getElementById('save-status');if(status)status.textContent='Guardado automáticamente en este navegador · '+new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'});}catch(error){console.warn('No se pudo guardar el torneo en este dispositivo:',error);const status=document.getElementById('save-status');if(status)status.textContent='⚠ No se pudo guardar en este navegador. No cierres esta página y exporta los datos antes de salir.';}}
+let revision=0;
+let lastSaved='';
+let pending=Promise.resolve();
+let saveFailed=false;
+function saveHistory(){
+ const {remoteTournamentId,remoteRevision,...history}=state;
+ const serialized=JSON.stringify(history);
+ if(serialized===lastSaved||saveFailed)return;
+ lastSaved=serialized;
+ const operation=crypto.randomUUID();
+ el('save-status').textContent='Guardando en el laboratorio…';
+ pending=pending.then(async()=>{
+  if(saveFailed)return;
+  revision=await window.TitanesTournamentAuth.saveTournament(tournamentId,revision,operation,JSON.parse(serialized));
+  el('save-status').textContent='Guardado en el laboratorio · revisión '+revision;
+ }).catch(error=>{
+  saveFailed=true;
+  el('access').hidden=false;
+  el('access').textContent='Se detuvo la edición. '+error.message;
+  el('manager').inert=true;
+ });
+}
+function persistState(){
+ try{localStorage.setItem(tournamentKey(tournamentId),JSON.stringify(state));}
+ catch(error){console.warn('No se pudo guardar la copia local del torneo:',error);}
+}
 const el=id=>document.getElementById(id);
 const element=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;};
 function notify(msg){el('message').textContent=msg;}
@@ -92,6 +117,8 @@ el('connect-tv').addEventListener('click',async()=>{
   if(!state.remoteTournamentId||el('remote-status').textContent.includes('Otra sesión')){state.remoteTournamentId=createTournamentTvCode();state.remoteRevision=0;persistState();}
   el('remote-status').textContent='Conectando con la cuenta del laboratorio…';
   const snapshot=window.TitanesBuildTvSnapshot.build(state);
+  await pending;
+  if(saveFailed)throw Error('El torneo requiere recarga.');
   const revision=await remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0);
   state.remoteRevision=revision;persistState();renderTvLink();notify('Torneo transmitiéndose en vivo. Comparte el enlace de la pantalla TV.');
  }catch(error){el('remote-status').textContent='No se pudo conectar · '+error.message;}
@@ -106,11 +133,13 @@ function show(){
  state.leaderboard=scoring.rankPlayers(allMatches.flatMap(match=>match.games||[]),state.pairs,state.events);
  persistState();
  renderTournamentList();
+ saveHistory();
  try{preview.publish(window.TitanesBuildTvSnapshot.build(state));}catch(error){console.warn('Vista TV no disponible:',error.message);}
  renderTvLink();
  if(state.remoteTournamentId){
-  try{const snapshot=window.TitanesBuildTvSnapshot.build(state);remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0).then(revision=>{state.remoteRevision=revision;persistState();renderTvLink();}).catch(error=>{const box=el('remote-status');if(box)box.textContent='⚠ Sin sincronizar · '+error.message;});}catch(error){const box=el('remote-status');if(box)box.textContent='⚠ No se pudo preparar el marcador · '+error.message;}
+  try{const snapshot=window.TitanesBuildTvSnapshot.build(state);pending.then(()=>{if(saveFailed)throw Error("El torneo requiere recarga.");return remote.publish(state.remoteTournamentId,snapshot,Number(state.remoteRevision)||0);}).then(revision=>{state.remoteRevision=revision;persistState();renderTvLink();}).catch(error=>{const box=el('remote-status');if(box)box.textContent='⚠ Sin sincronizar · '+error.message;});}catch(error){const box=el('remote-status');if(box)box.textContent='⚠ No se pudo preparar el marcador · '+error.message;}
  }
+ el('config-tables').disabled=state.matches.length>0;
  el('count').textContent=state.players.length+'/32 inscritos · '+state.players.filter(player=>player.confirmed).length+' validados';
  el('draw').disabled=state.players.length!==32||!state.players.every(player=>player.confirmed)||state.pairs.length>0;
  el('draw-matches').disabled=state.pairs.length!==16||state.matches.length>0;
@@ -240,7 +269,7 @@ async function compressPhoto(file){
  const canvas=document.createElement('canvas'),size=64,scale=Math.min(size/image.width,size/image.height);canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return canvas.toDataURL('image/jpeg',.55);
 }
 el('register').addEventListener('submit',async event=>{
- event.preventDefault();if(state.pairs.length||state.players.length>=32){notify('Inscripciones cerradas.');return;}
+ event.preventDefault();if(saveFailed||state.pairs.length||state.players.length>=32){notify('Inscripciones cerradas.');return;}
  const option=el('members').selectedOptions[0];
  const memberId=option?.value;
  const name=memberId?option.textContent:el('name').value.trim();if(name.length<2)return;
@@ -271,7 +300,7 @@ el('configuration').addEventListener('submit',event=>{
  event.preventDefault();
  state.name=el('config-name').value.trim();
  state.date=el('config-date').value;
- state.tables=Number(el('config-tables').value);
+ if(!state.matches.length)state.tables=Number(el('config-tables').value);
  state.rules=el('config-rules').value.trim();
  show();
  notify('Configuración guardada.');
@@ -283,6 +312,12 @@ let actor, role;
 window.addEventListener('titanes-auth-ready',async()=>{
  try{
   const session=await window.TitanesTournamentAuth.organizer();
+  const saved=await window.TitanesTournamentAuth.readTournament(tournamentId);
+  if(saved){
+   Object.assign(state,saved.state);revision=saved.revision;
+   el('save-status').textContent='Guardado en el laboratorio · revisión '+revision;
+  }
+  for(const key of ['name','date','tables','rules'])el('config-'+key).value=state[key];
   actor=session.id;
   role=session.role;
   for(const member of session.members){

@@ -27,6 +27,19 @@ window.TitanesTournamentAuth={
   if(error)throw error;
   return data.session?.access_token||null;
  },
+ async readTournament(key){
+  const {data,error}=await client.from('tournament_lab_history').select('revision,state')
+   .eq('tournament_key',key).order('revision',{ascending:false}).limit(1).maybeSingle();
+  if(error)throw Error('No se pudo leer el torneo del laboratorio.');
+  return data;
+ },
+ async saveTournament(key,revision,operation,state){
+  const {data,error}=await client.rpc('save_tournament_lab_revision',{
+   p_key:key,p_revision:revision,p_operation:operation,p_state:state
+  });
+  if(error)throw Error(error.message);
+  return data;
+ },
  async organizer(){
   const {data,error}=await client.auth.getUser();
   if(error||!data.user)throw Error('Inicia sesión en Titanes Dominó Laboratorio.');

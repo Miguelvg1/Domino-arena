@@ -1,23 +1,29 @@
-# Titanes Dominó — módulo de torneos (rama de pruebas)
+# Torneos Titanes Dominó · laboratorio
 
-## Funciones preparadas
-- Inscripción de jugadores con foto, sorteo de parejas y enfrentamientos, rondas, final y tercer lugar.
-- Puntuación adaptada a Titanes, correcciones con motivo e historial, y cierre confirmado a 200.
-- MVP y líder individual de puntos con average basado en Titanes v2.
-- Chivo y pase con ficha: 100 puntos para la pareja contraria y factor 0.90 al average del responsable. La multa aplica factor 0.97.
-- Pantalla pública con todas las mesas activas, nombres, fotos, puntajes, parejas líderes, cuadro de eliminatorias y avisos visuales/con voz.
+La rama experimental reutiliza el gestor, el motor de eliminatorias, el catálogo de anotaciones y el visor Android TV del prototipo. Se accede desde **Más → Torneos** con una cuenta de Presidencia o directiva de Titanes Laboratorio. La fecha inicial del torneo comunitario es el 13 de diciembre de 2026, en la zona horaria de Santo Domingo.
 
-## Sincronización y TV
-- El gestor toma la sesión de la app oficial y la función valida que sea un miembro activo de Presidencia o directiva.
-- Los datos de torneo se guardan en tablas separadas del proyecto Supabase de laboratorio; no se leen ni se escriben partidas oficiales.
-- RLS está activo y los clientes no tienen acceso directo a las tablas. La TV consulta solamente el snapshot público y no puede anotar.
-- El APK candidato Android TV incluye una pantalla para escribir un código de torneo de 16 caracteres con el control remoto y abrir el visor local de solo lectura.
-- El código y el enlace se generan desde el gestor móvil. La TV actualiza el marcador cada cinco segundos.
+## Flujo
 
-## Estado real
-El endpoint de laboratorio está desplegado. GET desconocido devuelve 404, PUT sin sesión devuelve 401, POST devuelve 405 y OPTIONS 204. Las tablas están vacías. El PR permanece en borrador; la app de Google Play no cambió.
+1. Configurar nombre, fecha, mesas disponibles y reglamento.
+2. Inscribir y validar a 32 participantes. Se admite el directorio del laboratorio y el registro de invitados.
+3. Sortear las 16 parejas y luego sortear los encuentros.
+4. Disputar cada serie al mejor de tres partidas a 200 puntos. La confirmación de la segunda victoria avanza el cuadro automáticamente. Las semifinales determinan la final y el tercer lugar.
+5. Revisar podio, estadísticas individuales, clasificación por parejas y MVP. El average conserva las penalizaciones y el bono acordados en el prototipo. El cálculo de liza distingue la dominada de los puntos especiales.
+6. Desde el gestor, conectar el marcador público. En el APK de TV se introduce el código de 16 caracteres. La pantalla pública recibe datos destinados al marcador y eventos audiovisuales.
 
-La compilación del APK de torneo y el emulador D-pad están en GitHub Actions. Falta validar una publicación con la cuenta de Presidencia/directiva desde otro dispositivo y probar el APK en la TV física.
+## Separación y auditoría
 
-## Pendientes de producto
-Probar el torneo completo con datos ficticios, validar la reproducción de voz en el televisor, revisar la fórmula con el club, añadir las novedades de IA en una etapa posterior y completar revisión antes de integrar/publicar.
+- El APK móvil usa `com.titanesdomino.torneoslab` y el de TV usa `com.titanesdomino.tvtest`.
+- Los clientes experimentales apuntan a Supabase Titanes Laboratorio. El servicio público de TV es `tournament-tv-sync-lab` y usa únicamente credenciales de ese entorno.
+- El historial del torneo registra versiones inmutables, identidad del actor, fecha e identificador de operación. Una versión desactualizada produce un conflicto y requiere recargar antes de seguir. La administración de horarios requiere autorización de Presidencia.
+- El estado deportivo se guarda aparte de las partidas habituales. Las anotaciones se validan en el motor del gestor. El servicio de historial valida identidad, revisión y permisos de horario.
+- El selector guarda los torneos visitados en el dispositivo. El estado confirmado se recupera del laboratorio al abrir la misma dirección del torneo.
+- La rama activa sus propias compilaciones de APK de depuración y pruebas. Las claves de firma de la app oficial quedan fuera de este flujo.
+
+## Validación
+
+```sh
+node --test tournaments/*.test.cjs tournaments/shared/*.test.cjs src/*.test.mjs
+```
+
+La simulación automatizada usa 32 jugadores y fuerza 16 series de tres partidas. Incluye anulaciones, cómputo de lizas, asignación de finalistas y tercer lugar. La prueba de la base experimental comprueba idempotencia, conflicto entre revisiones y permisos de lectura y escritura. La prueba con cuentas reales y TV física forma parte del ensayo operativo del club.
