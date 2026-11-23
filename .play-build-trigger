@@ -1,5 +1,5 @@
 Titanes Dominó Android build trigger
-Version: 1.0.4
-VersionCode: 5
-Reason: package existing score annulment action for official Google Play release; correction remains pending
+Version: 1.0.5
+VersionCode: 6
+Reason: tournament manager and club member search
 Date: 2026-11-23

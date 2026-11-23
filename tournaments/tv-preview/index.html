@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Titanes Dominó | Torneo en vivo</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#050816;--card:#09152b;--card2:#0c1c38;--line:#13e8ff;--text:#f7fbff;--muted:#b8c9dd;--neon-cyan:#26f5ff;--neon-pink:#ff32d2;--neon-lime:#9dff00;--neon-yellow:#fff200}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+body{height:100vh;height:100dvh;padding:.75vw .9vw .5vw;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 0,#102653 0,#070b1a 58%,#03040d 100%)}
+header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-bottom:.45vw;border-bottom:1px solid #13e8ff66}
+header small{font-size:clamp(10px,.82vw,16px);letter-spacing:.08em;color:#b8c9dd}
+h1{font-size:clamp(22px,2.25vw,44px);color:var(--neon-yellow);margin:.1em 0;text-shadow:0 0 8px #fff20088,0 0 18px #fff20044}
+#status{font-size:clamp(11px,.86vw,17px);font-weight:850;color:var(--neon-cyan);text-align:right;text-shadow:0 0 8px #26f5ff55}
+#back-tv,#voice-toggle{margin-top:.3rem;margin-right:.3rem;padding:.4rem .7rem;border:1px solid #26f5ff99;border-radius:8px;background:#0a2040;color:var(--text);font:inherit;font-size:clamp(11px,.75vw,15px);font-weight:800;cursor:pointer}
+#voice-toggle{border-color:#ff32d2aa}
+#back-tv:focus-visible,#voice-toggle:focus-visible{outline:3px solid var(--neon-yellow);outline-offset:2px}
+#voice-toggle:disabled{opacity:.55;cursor:not-allowed}
+#liza-notice{position:fixed;z-index:5;left:50%;bottom:4vh;transform:translateX(-50%);width:min(92vw,1100px);padding:clamp(10px,1vw,20px);border:2px solid var(--neon-yellow);border-radius:12px;background:#050816f5;box-shadow:0 0 22px #fff20066;text-align:center;color:#fff;font-size:clamp(16px,1.65vw,32px);font-weight:900}
+#liza-notice[hidden]{display:none}
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+#leader-strip{flex:0 0 auto;text-align:center;color:var(--neon-cyan);text-shadow:0 0 10px #26f5ff77;font-size:clamp(12px,1vw,20px);font-weight:950;padding:.3vw}
+#matches{--cols:1;--rows:1;--score:70px;--team:18px;--table:16px;--face-size:26px;flex:1;min-height:0;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));grid-template-rows:repeat(var(--rows),minmax(0,1fr));gap:clamp(4px,.45vw,9px);overflow:hidden;padding:.25vw 0}
+article{min-width:0;min-height:0;overflow:hidden;border:1px solid #26f5ff99;border-radius:11px;padding:clamp(3px,.45vw,9px);background:linear-gradient(145deg,#0d2144,#080f22 76%);box-shadow:inset 0 0 12px #26f5ff12,0 0 8px #26f5ff22;display:flex;flex-direction:column;justify-content:center}
+.faces{display:flex;justify-content:center;gap:clamp(2px,.25vw,5px);margin:1px 0}
+.faces img,.face-fallback{width:var(--face-size);height:var(--face-size);flex:0 0 var(--face-size);border-radius:50%;object-fit:cover;border:1px solid var(--neon-cyan);box-shadow:0 0 7px #26f5ff66}
+.face-fallback{display:grid;place-items:center;background:#182747;color:var(--neon-yellow);font-size:clamp(8px,.65vw,13px);font-weight:900}
+.table-title{font-size:var(--table);line-height:1.1;font-weight:950;color:var(--neon-cyan);text-shadow:0 0 8px #26f5ff55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.teams{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(3px,.38vw,7px);margin-top:clamp(3px,.4vw,8px)}
+.team{min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:center;background:#060b18;border:1px solid #486083;border-radius:9px;padding:clamp(2px,.35vw,7px)}
+.team.leading{border-color:var(--neon-yellow);box-shadow:0 0 11px #fff20077,inset 0 0 8px #fff20022}
+.team-name{font-size:var(--team);line-height:1.05;font-weight:850;overflow-wrap:anywhere;color:#f7fbff}
+.score{font-size:var(--score);font-weight:1000;line-height:.95;color:var(--neon-lime);text-shadow:0 0 7px #9dff00aa,0 0 17px #9dff0066}
+.team-b .score{color:var(--neon-pink);text-shadow:0 0 7px #ff32d2aa,0 0 17px #ff32d266}
+.lead{font-size:clamp(8px,.62vw,13px);font-weight:950;color:var(--neon-yellow);text-shadow:0 0 6px #fff20055;min-height:1em}
+.target{text-align:center;font-size:clamp(8px,.62vw,13px);font-weight:750;color:#c5d5ea;margin-top:2px}
+.empty{grid-column:1/-1;display:grid;place-items:center;border:1px dashed var(--neon-cyan);border-radius:12px;text-align:center;color:var(--muted);font-size:clamp(16px,1.6vw,28px)}
+#matches .score-change{border-color:var(--neon-yellow);box-shadow:0 0 22px #fff200aa;animation:scorePulse .85s ease-in-out 3}
+@keyframes scorePulse{50%{transform:scale(1.012);box-shadow:0 0 30px #fff200cc}}
+.bracket-pane{flex:0 0 auto;max-height:10vh;overflow:auto;border:1px solid #26f5ff55;border-radius:9px;background:#060b18;padding:3px 9px}
+.bracket-pane h2{font-size:clamp(10px,.75vw,15px);color:var(--neon-yellow);margin:1px 0}
+#bracket{display:flex;gap:3px 12px;flex-wrap:wrap;margin:2px 0;padding-left:16px;font-size:clamp(8px,.58vw,12px);color:#d4e2f0}
+footer{text-align:center;color:#aebfd4;font-size:clamp(8px,.58vw,12px);font-weight:800;padding-top:.25vw}
+#matches[data-density="dense"]+ .bracket-pane{max-height:7vh}
+#matches[data-density="dense"] article{border-radius:7px}
+#matches[data-density="dense"] .teams{margin-top:2px}
+@media(max-width:800px){body{padding:8px}header{align-items:flex-start;gap:.4rem}.bracket-pane{max-height:8vh}#matches[data-density="dense"]+.bracket-pane{max-height:6vh}}
+</style></head><body>
+<header><div><small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small><h1 id="title">🏆 TITANES DOMINÓ · TORNEO</h1></div><div><div id="status" role="status" aria-live="polite">Esperando datos del torneo…</div><button id="back-tv" type="button">↩ Volver al marcador general</button><button id="voice-toggle" type="button" aria-pressed="true">🔊 Voz automática activa</button></div></header>
+<aside id="liza-notice" role="status" aria-live="assertive" aria-atomic="true" hidden></aside>
+<main><section id="leader-strip" aria-live="polite">TITANES DOMINÓ · TORNEO EN VIVO</section><div class="grid" id="matches"></div><section class="bracket-pane"><h2>Cuadro de eliminatorias</h2><ul id="bracket"></ul></section></main>
+<footer>MARCADOR DEL TORNEO · SOLO LECTURA · La anotación se realiza desde el módulo móvil</footer>
+<script src="../shared/tv-snapshot.js"></script><script src="../shared/local-preview-sync.js"></script><script src="../shared/remote-tv-client.js"></script><script src="viewer.js"></script></body></html>

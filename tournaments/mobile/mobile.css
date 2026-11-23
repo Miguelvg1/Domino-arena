@@ -1,0 +1,53 @@
+*{box-sizing:border-box}
+:root{--bg:#07111f;--card:#0f2136;--card2:#142a44;--line:#294765;--text:#f8fafc;--muted:#9fb0c4;--gold:#f7c948;--green:#19c37d;--blue:#3b82f6;--red:#ef4444}
+body{margin:0;background:radial-gradient(circle at top,#132c49 0,#07111f 50%);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif;min-height:100vh}
+header{background:#07111ff0;color:white;padding:20px clamp(16px,4vw,44px);border-bottom:1px solid #27425f}
+header small{letter-spacing:.08em;color:var(--muted);font-size:.82rem}
+header h1{font-size:clamp(1.8rem,4vw,2.7rem);margin:.3rem 0;color:var(--gold)}
+header p{margin:0;color:#cbd5e1}
+main{max-width:1200px;margin:auto;padding:clamp(12px,3vw,28px) 14px 110px}
+.panel{background:linear-gradient(145deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:16px;margin-bottom:14px;padding:clamp(14px,2.2vw,22px);box-shadow:0 8px 24px #0003}
+h2{font-size:1.2rem;margin:0 0 14px;color:var(--gold)}
+form{display:grid;gap:10px}
+label{display:grid;gap:6px;font-weight:700}
+input,select{width:100%;border:1px solid #45637e;border-radius:10px;background:#091827;color:var(--text);font:inherit;font-size:16px;padding:11px}
+input::placeholder{color:#9fb0c4}
+input:read-only{color:#d5e5f4;background:#142a44}
+button{border:1px solid transparent;border-radius:10px;background:#12589a;color:white;padding:11px 16px;font-size:15px;font-weight:800;min-height:44px;margin:4px 5px 4px 0;cursor:pointer}
+button:disabled{opacity:.45}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.secondary{background:#52677b}.close-match{background:#8d2432}.primary-action{background:#137347}
+#message{min-height:1.5rem;color:#bde7ce;font-weight:800}
+#count{color:#cbd5e1}
+#players{columns:2;margin-bottom:0}
+.match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px}
+.match{min-width:0;border:1px solid var(--line);border-radius:14px;padding:14px;background:#091827;box-shadow:0 6px 16px #0002}
+.match>strong{display:block;color:var(--gold);margin-bottom:8px}
+.tournament-scoreboard{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.score-side{min-width:0;padding:10px 8px;text-align:center;border:1px solid #294765;border-radius:11px;background:#0f2136;display:grid;gap:4px;overflow-wrap:anywhere}
+.score-side-a b{font-size:clamp(2rem,6vw,3.3rem);line-height:1;color:var(--green)}
+.score-side-b b{font-size:clamp(2rem,6vw,3.3rem);line-height:1;color:var(--red)}
+.score-side.is-leading{border-color:var(--gold);box-shadow:0 0 12px #f7c94830}
+.score-side small{color:var(--gold);font-weight:900;min-height:1em}
+.score-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,.7fr);gap:7px;margin:10px 0;padding-top:9px;border-top:1px solid #294765}
+.score-form-name{grid-column:1/-1;font-weight:750;color:#d8e6f4}
+.score-form button{grid-column:1/-1}
+.score-history{margin-top:10px;color:#d4e2f0;font-size:.9rem}
+.score-history summary{cursor:pointer;font-weight:800;color:#9bc7f1}
+.score-history ul{padding-left:18px}
+.score-history li{padding:4px 0;overflow-wrap:anywhere}
+.small-button{font-size:12px;min-height:32px;padding:5px 9px}
+.tournament-result{grid-column:1/-1;background:#142a44;border:1px solid var(--gold);border-radius:14px;padding:16px;color:#d9e8f5}
+.success{color:#8de5ad;font-weight:800}
+@media(max-width:560px){#players{columns:1}.score-form{grid-template-columns:1fr 1fr}}
+
+#players{padding-left:20px}#players li{display:flex;align-items:center;gap:8px;padding:3px 0}.player-photo-thumb,.mvp-photo{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}.mvp-photo{width:72px;height:72px}.responsible-player{grid-column:1/-1}.tournament-result{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.tournament-result h2{width:100%}
+.drawing { animation: tournament-draw 160ms ease-in-out alternate infinite; }
+@keyframes tournament-draw {
+  to { transform: translateY(-3px) scale(1.03); box-shadow: 0 0 20px #42e8ff; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawing { animation: none; }
+}
+#players button { margin: 0.2rem; padding: 0.4rem 0.6rem; }
+#manager[hidden], #access[hidden] { display: none; }

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Titanes Dominó | Gestor de torneos</title><link rel="stylesheet" href="/tournaments/mobile/mobile.css?v=20261118-2"><style id="tournament-contrast-fallback">body{background:#07111f;color:#f8fafc;font:16px Arial,system-ui,sans-serif}header{background:#07111f;color:#fff;padding:16px}header h1{color:#f7c948}main{padding:14px 14px 110px} .panel{background:#142a44;color:#f8fafc;border:1px solid #45637e;border-radius:14px;padding:16px;margin:12px 0}h2{color:#f7c948}p,label,li{color:#f1f5f9}a{color:#9bc7f1}#count,#save-status{color:#d9e8f5}</style></head>
+<body>
+<header><small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small><h1>🏆 TITANES DOMINÓ · TORNEO</h1><p>Gestor del club</p></header>
+<p id="access" role="status">Verificando acceso al gestor…</p>
+<button id="retry-access" type="button" hidden>Reintentar acceso</button>
+<main id="manager" hidden>
+<section class="panel"><label>Torneo<select id="tournament-list"></select></label><button id="new-tournament" type="button" class="secondary">Nuevo torneo</button><h2>Configuración del torneo</h2>
+<form id="configuration">
+<label>Nombre<input id="config-name" required maxlength="120"></label>
+<label>Fecha en Santo Domingo<input id="config-date" type="date" required></label>
+<label>Cupo de jugadores<input id="config-capacity" type="number" min="8" max="64" step="2" required></label><label>Mesas disponibles<input id="config-tables" type="number" min="1" max="8" required></label>
+<label>Reglamento<textarea id="config-rules" maxlength="500"></textarea></label>
+<button>Guardar configuración</button></form></section>
+<section class="panel"><h2>Inscribir jugadores</h2><form id="register"><label>Buscar miembro por nombre, apellido o apodo<input id="member-search" type="search" autocomplete="off" placeholder="Escribe para filtrar"></label><label>Miembro del club<select id="members"><option value="">Registrar invitado</option></select></label><p id="member-search-status" role="status" aria-live="polite"></p><label for="name">Nombre o apodo<input id="name" required minlength="2" maxlength="60" autocomplete="off" placeholder="Escribe el jugador"></label><label for="photo">Foto del jugador (opcional)<input id="photo" type="file" accept="image/*"></label><button type="submit">Agregar jugador</button></form><p id="count">0 jugadores</p><p id="save-status" role="status" aria-live="polite">El torneo se guarda automáticamente en este navegador.</p><ul id="players"></ul></section>
+<section class="panel"><h2>Organizar el torneo</h2><p>Valida la asistencia de todos los inscritos antes de sortear las parejas. El cuadro asigna pases automáticos por sorteo cuando hace falta.</p><button id="draw" type="button" disabled>Sortear parejas</button><button id="draw-matches" type="button" disabled>Sortear enfrentamientos</button><p><a href="../tv-preview/index.html" target="_blank" rel="noopener">Abrir marcador TV de torneo · solo lectura</a></p><p id="message" role="status" aria-live="polite"></p></section>
+<section class="panel tv-sync-panel"><h2>Transmitir en vivo a la TV</h2><p>Se sincroniza el marcador del torneo para que el público lo vea en otra pantalla. Solo Presidencia o la directiva pueden publicar; la TV no puede anotar.</p><button id="connect-tv" type="button">Conectar este torneo con la TV</button><p id="remote-status" role="status" aria-live="polite">Todavía no está transmitiendo.</p><p>Código para escribir en la TV: <strong id="remote-code">—</strong></p><a id="tv-link" hidden target="_blank" rel="noopener">Abrir pantalla pública del torneo</a><button id="copy-tv-link" type="button" class="secondary" hidden>Copiar enlace de TV</button></section>
+<section class="panel"><h2>Parejas sorteadas</h2><ol id="pairs"></ol></section>
+<section class="panel"><h2>Encuentros de la ronda</h2><p>Los tipos de puntos siguen el marcador de Titanes; las correcciones requieren motivo y el cierre se confirma al llegar a 200.</p><div id="matches" class="match-grid"></div></section>
+<section class="panel"><h2>Cuadro e historial</h2><ol id="bracket"></ol></section><section class="panel"><h2>Clasificación por parejas</h2><ol id="pair-rank"></ol><h2>Clasificación individual</h2><ol id="individual-rank"></ol></section></main>
+<script src="../tournament-engine.js"></script><script src="../scoring.js"></script><script src="../series.js"></script><script src="../shared/tv-snapshot.js"></script><script src="../shared/build-snapshot.js"></script><script src="../shared/local-preview-sync.js"></script><script src="../shared/remote-tournament-sync.js"></script>
+<script src="auth.js"></script>
+<script src="mobile.js"></script>
+<script src="startup.js"></script>
+</body></html>

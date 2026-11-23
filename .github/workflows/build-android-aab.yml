@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - release/titanes-torneos-1-0-5
     paths:
       - '.play-build-trigger'
 
@@ -79,8 +80,8 @@ jobs:
 
           p = Path('android/app/build.gradle')
           s = p.read_text()
-          s = s.replace('versionCode 1', 'versionCode 5')
-          s = s.replace('versionName "1.0"', 'versionName "1.0.4"')
+          s = s.replace('versionCode 1', 'versionCode 6')
+          s = s.replace('versionName "1.0"', 'versionName "1.0.5"')
           p.write_text(s)
           PY
 
