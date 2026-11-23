@@ -1,0 +1,18 @@
+name: Validate Anular score
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/void-score.test.mjs'
+      - '.github/workflows/validate-void-score.yml'
+  workflow_dispatch:
+jobs:
+  void-score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test Anular
+        run: node tests/void-score.test.mjs
