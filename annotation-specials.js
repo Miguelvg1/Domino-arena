@@ -1,5 +1,5 @@
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2.57.4';
-const sb=createClient('https://hvpyngkqtqzvmweavego.supabase.co','sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX');
+const sb=createClient('https://ybtdxjqodcjoccyuauzv.supabase.co','sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk');
 let currentGameId=null,currentTeam='L',busy=false;
 const defs={
  paso_corrido:{label:'🔄 PASO CORRIDO',points:30},

@@ -13,7 +13,7 @@ document.getElementById('tournament-connect').addEventListener('submit',event=>{
  const code=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
  if(!/^[A-HJ-KM-NP-TV-Z0-9]{16}$/.test(code)){error.textContent='El código debe tener 16 letras o números. Revisa los grupos de cuatro.';input.focus();return;}
  const viewer=new URL('/tournaments/tv-preview/index.html',location.origin);
- viewer.searchParams.set('endpoint','https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync/'+code);
+ viewer.searchParams.set('endpoint','https://ybtdxjqodcjoccyuauzv.supabase.co/functions/v1/tournament-tv-sync-lab/'+code);
  location.href=viewer.href;
 });
 const config=window.TITANES_TV_CONFIG||{};

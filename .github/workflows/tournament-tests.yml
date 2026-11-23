@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/torneos-tv-diciembre-2026
+      - test/torneos-integral-20261123
     paths:
       - 'tournaments/**'
       - '.github/workflows/tournament-tests.yml'
@@ -27,7 +28,7 @@ jobs:
           node --check tournaments/shared/remote-tv-client.js
           node --check tournaments/shared/remote-tournament-sync.js
       - name: Tournament bracket
-        run: node tournaments/tournament-engine.test.cjs
+        run: node --test tournaments/tournament-engine.test.cjs tournaments/series.test.cjs
       - name: Tournament scoring
         run: node tournaments/scoring.test.cjs
       - name: TV snapshot contract

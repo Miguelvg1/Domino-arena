@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-const sb=createClient('https://hvpyngkqtqzvmweavego.supabase.co','sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX');
+const sb=createClient('https://ybtdxjqodcjoccyuauzv.supabase.co','sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk');
 let members=[];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nm=m=>m?.nickname||m?.full_name||'Jugador';

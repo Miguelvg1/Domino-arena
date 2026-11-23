@@ -1,6 +1,6 @@
 {
-  "appId": "com.titanesdomino.app",
-  "appName": "Titanes Dominó",
+  "appId": "com.titanesdomino.torneoslab",
+  "appName": "Titanes Torneos Lab",
   "webDir": "www",
   "server": {
     "androidScheme": "https"

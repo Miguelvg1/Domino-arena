@@ -42,3 +42,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 @media(max-width:560px){#players{columns:1}.score-form{grid-template-columns:1fr 1fr}}
 
 #players{padding-left:20px}#players li{display:flex;align-items:center;gap:8px;padding:3px 0}.player-photo-thumb,.mvp-photo{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}.mvp-photo{width:72px;height:72px}.responsible-player{grid-column:1/-1}.tournament-result{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.tournament-result h2{width:100%}
+.drawing { animation: tournament-draw 160ms ease-in-out alternate infinite; }
+@keyframes tournament-draw {
+  to { transform: translateY(-3px) scale(1.03); box-shadow: 0 0 20px #42e8ff; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawing { animation: none; }
+}
+#players button { margin: 0.2rem; padding: 0.4rem 0.6rem; }
+#manager[hidden], #access[hidden] { display: none; }

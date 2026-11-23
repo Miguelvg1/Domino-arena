@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const sb=createClient('https://hvpyngkqtqzvmweavego.supabase.co','sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX');
+const sb=createClient('https://ybtdxjqodcjoccyuauzv.supabase.co','sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk');
 const MODES={
  strict_order:['Turno Global Estricto','El sistema forma parejas por orden: 1+2, 3+4, 5+6.'],
  preformed_pairs:['Parejas por orden','Se registran dos jugadores juntos y las parejas entran por orden.'],

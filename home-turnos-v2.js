@@ -1,7 +1,7 @@
 // Titanes Dominó · Inicio y Retadores V2
 // Top 10 semanal oficial (mínimo 10 PJ), Top 5 del día (mínimo 3 PJ), Jugador del Día y cola global sin mesa.
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2.57.4';
-const sb=createClient('https://hvpyngkqtqzvmweavego.supabase.co','sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX');
+const sb=createClient('https://ybtdxjqodcjoccyuauzv.supabase.co','sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk');
 let busyTop=false,busyDay=false,busyDayTop=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function localDayStart(){let d=new Date();d.setHours(0,0,0,0);return d}

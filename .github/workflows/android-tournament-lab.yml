@@ -1,0 +1,42 @@
+name: Titanes tournament laboratory APK
+on:
+  push:
+    branches: [test/torneos-integral-20261123]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    if: github.ref == 'refs/heads/test/torneos-integral-20261123'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android SDK and Capacitor
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          npm install --ignore-scripts --no-audit --no-fund
+      - name: Prepare and verify laboratory assets
+        run: |
+          node --test tournaments/*.test.cjs tournaments/shared/*.test.cjs
+          mkdir -p www/tournaments
+          cp *.html *.js manifest.webmanifest www/
+          cp -R tournaments/mobile tournaments/shared tournaments/tv-preview www/tournaments/
+          cp tournaments/scoring.js tournaments/series.js tournaments/tournament-engine.js www/tournaments/
+          if grep -R 'hvpyngkqtqzvmweavego' www; then exit 1; fi
+          grep -q 'com.titanesdomino.torneoslab' capacitor.config.json
+          npx cap add android
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: titanes-torneos-lab-android
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

@@ -9,22 +9,20 @@ const response=(body,status=200)=>new Response(JSON.stringify(body),{status,head
  const queue=[response({revision:1,snapshot:{schemaVersion:1}})];
  global.fetch=async(url,init)=>{calls.push({url:String(url),init});return queue.shift();};
  let status;
- const client=create({baseUrl:'https://lab.example/functions/v1/tournament-tv-sync',getAccessToken:async()=>'official-user-jwt',onStatus:(s,d)=>status=[s,d]});
+ const client=create({baseUrl:'https://lab.example/functions/v1/tournament-tv-sync',getAccessToken:async()=>'lab-user-jwt',onStatus:(s,d)=>status=[s,d]});
  const revision=await client.publish('a'.repeat(32),{schemaVersion:1,matches:[]},0);
  assert.equal(revision,1);
  assert.equal(calls.length,1);
  assert.equal(calls[0].init.method,'PUT');
- assert.equal(calls[0].init.headers.Authorization,'Bearer official-user-jwt');
+ assert.equal(calls[0].init.headers.Authorization,'Bearer lab-user-jwt');
  assert.equal(JSON.parse(calls[0].init.body).expectedRevision,0);
  assert.equal(status[0],'updated');
 
  calls.length=0;
- queue.push(response({error:'conflict'},409),response({revision:7,snapshot:{schemaVersion:1}}),response({revision:8,snapshot:{schemaVersion:1}}));
- const next=await client.publish('a'.repeat(32),{schemaVersion:1,matches:[{scoreA:10}]},1);
- assert.equal(next,8);
- assert.deepEqual(calls.map(x=>x.init.method),['PUT','GET','PUT']);
- assert.equal(JSON.parse(calls[2].init.body).expectedRevision,7);
- assert.equal(calls[2].init.headers.Authorization,'Bearer official-user-jwt');
+ queue.push(response({error:'conflict'},409));
+ await assert.rejects(()=>client.publish('a'.repeat(32),{schemaVersion:1,matches:[{scoreA:10}]},0),/Otra sesión/);
+ assert.deepEqual(calls.map(x=>x.init.method),['PUT']);
+ assert.equal(JSON.parse(calls[0].init.body).expectedRevision,1);
 
  calls.length=0;
  global.fetch=async(url,init)=>{calls.push({url:String(url),init});return response({revision:9,snapshot:{schemaVersion:1}});};
@@ -39,5 +37,5 @@ const response=(body,status=200)=>new Response(JSON.stringify(body),{status,head
  assert.throws(()=>create({baseUrl:'http://lab.example',getAccessToken:async()=>''}),/inseguro/);
  client.close();missing.close();
  global.fetch=originalFetch;
- console.log('Remote tournament transport: organizer authorization, read-only TV GET and revision conflict recovery passed.');
+ console.log('Remote tournament transport: organizer authorization, read-only TV GET and stale revision rejection passed.');
 })().catch(error=>{global.fetch=originalFetch;console.error(error);process.exitCode=1;});

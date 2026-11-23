@@ -64,7 +64,7 @@ const params=new URLSearchParams(window.location.search),remotePath=params.get('
 if(remotePath){
  const endpoint=new URL(remotePath,window.location.href);
  const allowedOrigin='https://ybtdxjqodcjoccyuauzv.supabase.co';
- const safe=endpoint.origin===allowedOrigin&&endpoint.protocol==='https:'&&endpoint.username===''&&endpoint.password===''&&endpoint.search===''&&endpoint.hash===''&&/^\/functions\/v1\/tournament-tv-sync\/[A-Za-z0-9_-]{16,64}$/.test(endpoint.pathname);
+ const safe=endpoint.origin===allowedOrigin&&endpoint.protocol==='https:'&&endpoint.username===''&&endpoint.password===''&&endpoint.search===''&&endpoint.hash===''&&/^\/functions\/v1\/tournament-tv-sync-lab\/[A-Za-z0-9_-]{16,64}$/.test(endpoint.pathname);
  if(!safe){$('status').textContent='Enlace de torneo no válido. Vuelve a copiarlo desde la app.';}
  else{
   const client=window.TitanesRemoteTvClient.create({

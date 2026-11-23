@@ -1,7 +1,7 @@
 import{createClient}from'https://esm.sh/@supabase/supabase-js@2.57.4';
 
-const URL='https://hvpyngkqtqzvmweavego.supabase.co';
-const KEY='sb_publishable_fZbTJCeuM8otLDnnoxRc9w_OGdZIXhX';
+const URL='https://ybtdxjqodcjoccyuauzv.supabase.co';
+const KEY='sb_publishable_kwqHU1p_F_C_u7J_nWau9Q_9xq2sbuk';
 const sb=createClient(URL,KEY);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nameOf=m=>m?.nickname||m?.full_name||'Jugador';

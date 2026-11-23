@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/torneos-tv-diciembre-2026
+      - test/torneos-integral-20261123
     paths:
       - 'tv/**'
       - 'scripts/enable_android_tv.cjs'

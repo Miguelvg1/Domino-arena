@@ -3,6 +3,7 @@
 'use strict';
 function create({baseUrl,getAccessToken,onStatus=()=>{}}){
  let closed=false,queue=Promise.resolve();
+ const revisions=new Map();
  const base=new URL(baseUrl);
  if(base.protocol!=='https:'||base.search||base.hash)throw Error('Endpoint remoto inseguro');
  async function read(id){
@@ -12,7 +13,7 @@ function create({baseUrl,getAccessToken,onStatus=()=>{}}){
  }
  async function send(id,snapshot,expectedRevision,operationId){
   const token=await getAccessToken();
-  if(!token)throw Error('Inicia sesión en la app oficial para transmitir el torneo.');
+  if(!token)throw Error('Inicia sesión en la app de laboratorio para transmitir el torneo.');
   const url=base.href.replace(/\/$/,'')+'/'+encodeURIComponent(id);
   const response=await fetch(url,{method:'PUT',cache:'no-store',credentials:'omit',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({expectedRevision,operationId,snapshot})});
   const body=await response.json().catch(()=>({}));
@@ -26,13 +27,10 @@ function create({baseUrl,getAccessToken,onStatus=()=>{}}){
    if(closed)throw Error('Sincronización cerrada');
    let opId=globalThis.crypto?.randomUUID?.().replace(/-/g,'');
    if(!opId)throw Error('Este dispositivo no permite crear un identificador seguro.');
-   let result=await send(id,snapshot,revision,opId);
-   if(result.conflict){
-    const current=await read(id);
-    if(!Number.isSafeInteger(current.revision))throw Error('Revisión remota inválida.');
-    result=await send(id,snapshot,current.revision,opId);
-    if(result.conflict)throw Error('Otro organizador está actualizando el torneo. Vuelve a intentarlo.');
-   }
+   const expected=Math.max(revision,revisions.get(id)||0);
+   const result=await send(id,snapshot,expected,opId);
+   if(result.conflict)throw Error('Otra sesión publicó un marcador más reciente. Vuelve a conectar con un código nuevo.');
+   revisions.set(id,result.revision);
    onStatus('updated',result.revision);
    return result.revision;
   });
