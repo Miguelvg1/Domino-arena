@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071527">
+<title>Titanes Dominó | Partidas en vivo</title>
+<link rel="stylesheet" href="tv.css">
+</head>
+<body>
+<header>
+  <div>
+    <small>CLUB DE DOMINÓ LOS TITANES DE LOS GUANDULES</small>
+    <h1>🁣 TITANES DOMINÓ</h1>
+    <div id="subtitle">Seguimiento público de partidas en vivo</div>
+  </div>
+  <div id="connection" role="status" aria-live="polite">MODO DEMOSTRACIÓN</div>
+</header>
+<main>
+  <div class="toolbar">
+    <button id="fullscreen" type="button">⛶ Pantalla completa</button>
+    <button id="refresh" type="button">↻ Actualizar</button>
+    <button id="voice-toggle" type="button" aria-pressed="true">🔊 Voz automática activa</button>
+    <span id="clock"></span>
+  </div>
+  <form id="tournament-connect" class="tv-tournament-connect">
+    <label for="tournament-code">🏆 Ver torneo en vivo · escribe el código de 16 caracteres</label>
+    <input id="tournament-code" type="text" maxlength="19" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código del torneo">
+    <button type="submit">Abrir torneo</button>
+    <span id="tournament-error" role="status" aria-live="polite"></span>
+  </form>
+  <div id="updated" aria-live="polite"></div>
+  <section id="matches" class="matches" aria-label="Marcadores de las partidas activas"></section>
+</main>
+<aside id="liza-notice" role="status" aria-live="assertive" aria-atomic="true" hidden></aside>
+<footer>MARCADOR PÚBLICO · SOLO LECTURA · No permite anotar ni modificar partidas</footer>
+<script src="config.js"></script>
+<script src="tv.js"></script>
+</body>
+</html>

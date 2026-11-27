@@ -1,0 +1,59 @@
+name: Tournament engine checks
+on:
+  push:
+    branches:
+      - feature/torneos-tv-diciembre-2026
+    paths:
+      - 'tournaments/**'
+      - '.github/workflows/tournament-tests.yml'
+  pull_request:
+    paths:
+      - 'tournaments/**'
+      - '.github/workflows/tournament-tests.yml'
+permissions:
+  contents: read
+jobs:
+  tournament:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser JavaScript syntax
+        run: |
+          node --check tournaments/mobile/mobile.js
+          node --check tournaments/tv-preview/viewer.js
+          node --check tournaments/shared/remote-tv-client.js
+          node --check tournaments/shared/remote-tournament-sync.js
+      - name: Tournament bracket
+        run: node tournaments/tournament-engine.test.cjs
+      - name: Tournament scoring
+        run: node tournaments/scoring.test.cjs
+      - name: TV snapshot contract
+        run: node tournaments/shared/tv-snapshot.test.cjs
+      - name: TV snapshot builder
+        run: node tournaments/shared/build-snapshot.test.cjs
+      - name: Local TV preview synchronization
+        run: node tournaments/shared/local-preview-sync.test.cjs
+      - name: Laboratory snapshot authorization and revisions
+        run: node tournaments/lab/snapshot-store.test.cjs
+      - name: PostgreSQL snapshot persistence contract
+        run: node tournaments/lab/postgres-store.test.cjs
+      - name: Install isolated TV laboratory server dependencies
+        run: npm install --prefix tournaments/lab --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Check Vercel laboratory handler syntax
+        run: |
+          node --check tournaments/lab/vercel-handler.cjs
+          node --check tournaments/lab/api/index.js
+          node -e "const v=require('./tournaments/lab/vercel.json'); if(!v.rewrites.some(r=>r.source.includes(':id'))) process.exit(1)"
+      - name: Vercel TV API read-only regression
+        run: node tournaments/lab/vercel-handler.test.cjs
+      - name: TV server read-only access controls
+        run: node tournaments/lab/server.test.cjs
+      - name: Laboratory HTTP snapshot integration
+        run: node tournaments/lab/http-adapter.test.cjs
+      - name: Remote TV synchronization
+        run: node tournaments/shared/remote-tv-client.test.cjs
+      - name: Remote tournament synchronization transport
+        run: node tournaments/shared/remote-tournament-sync.test.cjs
