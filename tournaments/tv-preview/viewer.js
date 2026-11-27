@@ -35,8 +35,9 @@ function render(raw){
  if(s.updatedAt&&lastUpdate&&s.updatedAt<lastUpdate)return;lastUpdate=s.updatedAt;
  $('title').textContent='🏆 '+s.tournament;
  $('status').textContent='● '+(s.updatedAt?'Actualizado '+new Date(s.updatedAt).toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit'}):'Esperando marcador')+' · SOLO LECTURA';
- const grid=$('matches');grid.replaceChildren();
+ const grid=$('matches');const matchSignature=JSON.stringify(s.matches);const matchesChanged=grid.dataset.matchSignature!==matchSignature;if(matchesChanged){grid.replaceChildren();grid.dataset.matchSignature=matchSignature;}
  const strip=$('leader-strip');if(strip){const parts=[];if(s.leaders.mvp)parts.push('👑 MVP: '+s.leaders.mvp.name+' · '+Number(s.leaders.mvp.average).toFixed(2)+'%');if(s.leaders.points)parts.push('🎯 Más puntos: '+s.leaders.points.name+' · '+Number(s.leaders.points.value).toFixed(1));strip.textContent=parts.join('   |   ')||'TITANES DOMINÓ · TORNEO EN VIVO';}
+ if(matchesChanged){
  for(const m of s.matches){
   const card=el('article');card.dataset.table=String(m.table);const title=el('div',(m.round||'Torneo')+' · MESA '+m.table);title.className='table-title';card.append(title);
   const teams=el('div');teams.className='teams';
@@ -50,6 +51,7 @@ function render(raw){
  }
  if(!grid.childNodes.length){const empty=el('div','No hay encuentros activos en este momento.');empty.className='empty';grid.append(empty);}
  grid.dataset.count=String(s.matches.length);fitGrid(s.matches.length);
+ }
  $('bracket').replaceChildren(...s.bracket.map(b=>el('li',typeof b==='string'?b:b.label)));consumeNotices(s.events);
 }
 $('back-tv').addEventListener('click',()=>{window.location.href=new URL('/index.html',window.location.origin).href;});
