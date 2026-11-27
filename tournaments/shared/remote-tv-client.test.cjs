@@ -6,4 +6,8 @@ await new Promise(r=>setTimeout(r,5));delayed.close();resolveFirst({revision:99,
 let finishPending,fetches=0,received=[];
 const queued=create({fetchSnapshot:()=>{fetches++;if(fetches===1)return new Promise(resolve=>{finishPending=resolve;});return Promise.resolve({revision:2,snapshot:{schemaVersion:1,matches:[]}});},onSnapshot:s=>received.push(s),intervalMs:60000}).start();
 await new Promise(r=>setTimeout(r,5));void queued.refresh();finishPending({revision:1,snapshot:{schemaVersion:1,matches:[]}});await new Promise(r=>setTimeout(r,10));assert.equal(fetches,2,'Debe recuperar actualización recibida durante consulta');assert.equal(queued.getRevision(),2);queued.close();
+let offline=false,reconnectStatuses=[],reconnectFrames=[];
+const reconnect=create({fetchSnapshot:async()=>{if(offline)throw Error('offline');return {revision:7,snapshot:{matches:[]}};},onSnapshot:s=>reconnectFrames.push(s),onStatus:s=>reconnectStatuses.push(s),intervalMs:60000});
+await reconnect.refresh();offline=true;await reconnect.refresh();offline=false;await reconnect.refresh();
+assert.deepEqual(reconnectStatuses,['updated','offline','updated']);assert.equal(reconnectFrames.length,1);assert.equal(reconnect.getRevision(),7);reconnect.close();
 console.log('Remote TV client checks passed');})().catch(e=>{console.error(e);process.exitCode=1;});
